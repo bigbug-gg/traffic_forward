@@ -1,5 +1,5 @@
 use rexpect::spawn;
-use std::process::Command;
+use std::{process::Command, thread};
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,9 +55,25 @@ pub fn add(
         forward_up.as_str(),
         forward_down.as_str(),
     ];
+    
+
+    let mut hands = Vec::new();
     for command in command_vec {
-        let _ = run_command(command, user_password);
+        let a = command.to_owned();
+        let p = if user_password.is_none() { "" } else { 
+            user_password.unwrap()
+        };
+        let p = p.to_owned();
+        let one = thread::spawn(move || {
+            let _ = run_command(&a, Some(&p));
+        });
+        hands.push(one);
     }
+
+    for h in hands {
+        h.join().unwrap();
+    }
+
     Ok(())
 }
 
@@ -93,19 +109,32 @@ pub fn traffic(target_ip: &str, sudo_password: Option<&str>) -> Result<(u64, u64
 /// get target ip and delete all of forward config with they.
 ///
 pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
-    let mut res: Vec<Result<(), String>> = Vec::new();
+    let fn_list = vec![
+        |a: &str, p: Option<&str>| delete_forward(a, p),
+        |a: &str, p: Option<&str>| delete_postrouting(a, p),
+        |a: &str, p: Option<&str>| delete_prerouting(a, p),
+    ];
 
-    // FORWARD has two rules: up and down, So it needs to be done twice
-    res.push(delete_forward(target_ip, sudo_password));
+    let mut handles = Vec::new();
+    for su_fn  in fn_list {
 
-    res.push(delete_postrouting(target_ip, sudo_password));
-    res.push(delete_prerouting(target_ip, sudo_password));
+        let a = target_ip.to_owned();
+        let p = if sudo_password.is_none() { "" } else { 
+            sudo_password.unwrap()
+        };
+        let p = p.to_owned();
+
+        let h = thread::spawn(move|| {
+            su_fn(&a, Some(&p))
+        });
+        handles.push(h);
+    }
 
     let mut error: String = String::new();
-    for i in res {
-        if i.is_err() {
-            error.push_str(i.err().unwrap().as_str());
-        }
+    for h in handles  {
+       if let Err(e) =  h.join().unwrap() {
+            error.push_str(&e);
+       }
     }
 
     if error.len() > 0 {
