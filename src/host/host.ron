@@ -1,1 +1,1 @@
-(list:[(ip:"193.23.23",target_port:"223",local_port:"333"),(ip:"1943.23.23",target_port:"223",local_port:"33333")])
+(list:[(ip:"193.23.23",target_port:"223",local_port:"333"),(ip:"1943.23.23",target_port:"223",local_port:"33333"),(ip:"192.168.50.50",target_port:"4488",local_port:"4433")])
