@@ -1,8 +1,7 @@
 use crate::{host::{self, ip::{self, Info}}, iptables::{self, tools}};
 
-pub fn list() {
-    let data = host::ip::host_list();
-    println!("{:?}", data)
+pub fn list() -> Option<ip::Host> {
+    host::ip::host_list()
 }
 
 ///
