@@ -101,7 +101,7 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 ## List of forward rule
 * uri: iptables/list
 * method: get
-* request: empty (change last version will) 
+* request: empty (change next version will) 
 * response
 ```
 {
