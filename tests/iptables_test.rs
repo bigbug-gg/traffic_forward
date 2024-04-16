@@ -1,4 +1,4 @@
-use one_test::iptables::tools;
+use iptables_forward::iptables::tools;
 
 #[test]
 fn one_forward() {

@@ -1,4 +1,4 @@
-use one_test::service;
+use iptables_forward::service;
 
 
 #[test]
