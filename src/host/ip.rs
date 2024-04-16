@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use std::fs::File;
 use std::io::Write;
 
@@ -6,8 +7,8 @@ use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Host {
-    list: Vec<Info>,
+pub struct Host {
+    pub list: Vec<Info>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -15,6 +16,25 @@ pub struct Info {
     pub ip: String,
     pub target_port: String,
     pub local_port: String,
+}
+
+///
+/// Exists check ip if real in file
+/// 
+pub fn exists(ip: &str) -> Result<bool, String> {
+    let content = host_list();
+    if content.is_none() {
+        return Err("Fetch Data error!".to_string());
+    }
+
+    let ip_host = content.unwrap();
+    
+    for info in ip_host.list {
+        if info.ip.eq(ip) {
+            return Ok(true);
+        }
+    }
+    return Ok(false);
 }
 
 ///
@@ -87,7 +107,7 @@ pub fn delete_host(ip: &str) {
 ///
 /// Get All Target Host Info
 ///
-fn host_list() -> Option<Host> {
+pub fn host_list() -> Option<Host> {
     let content = File::open(host_path()).expect("Failed opening file");
 
     let config: Host = match from_reader(content) {

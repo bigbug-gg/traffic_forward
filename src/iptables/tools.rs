@@ -61,14 +61,16 @@ pub fn add(
     Ok(())
 }
 
-
 ///
 /// Check
 ///
-pub fn check(target_ip: &str, sudo_password: Option<&str>) -> Result<(String, String), String> {
-    let res = run_command("sudo iptables -t filter -vxnL FORWARD --line", sudo_password);
-    let mut up = String::from("0");
-    let mut down = String::from("0");
+pub fn traffic(target_ip: &str, sudo_password: Option<&str>) -> Result<(u64, u64), String> {
+    let res = run_command(
+        "sudo iptables -t filter -vxnL FORWARD --line",
+        sudo_password,
+    );
+    let mut up = 0;
+    let mut down = 0;
 
     for i in res.unwrap() {
         if !i.contains(target_ip) {
@@ -77,9 +79,9 @@ pub fn check(target_ip: &str, sudo_password: Option<&str>) -> Result<(String, St
         let mut m: Vec<&str> = i.split(" ").filter(|_i| !_i.is_empty()).collect();
         let p_str = m.pop().unwrap();
         if target_ip.eq(p_str) {
-            up = m.get(1).unwrap().to_string();
+            up += m.get(1).unwrap().parse::<u64>().unwrap();
         } else {
-            down = m.get(2).unwrap().to_string();
+            down += m.get(1).unwrap().parse::<u64>().unwrap();
         }
     }
     Ok((up, down))
@@ -94,7 +96,6 @@ pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String
     let mut res: Vec<Result<(), String>> = Vec::new();
 
     // FORWARD has two rules: up and down, So it needs to be done twice
-    res.push(delete_forward(target_ip, sudo_password));
     res.push(delete_forward(target_ip, sudo_password));
 
     res.push(delete_postrouting(target_ip, sudo_password));
@@ -115,86 +116,92 @@ pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String
 }
 
 fn delete_prerouting(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
-    let res = run_command("sudo iptables -t nat -vnL PREROUTING --line", sudo_password);
-    let mut line_str: Option<String> = None;
-    for i in res.unwrap() {
-        if i.contains(target_ip) {
-            line_str = Some(i);
+    loop {
+        let res = run_command("sudo iptables -t nat -vnL PREROUTING --line", sudo_password);
+        let mut line_str: Option<String> = None;
+        for i in res.unwrap() {
+            if i.contains(target_ip) {
+                line_str = Some(i);
+                break;
+            }
+        }
+
+        if line_str.is_none() {
             break;
         }
+
+        let line_row = line_str.unwrap();
+        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
+
+        // Get ip index, delete we need this
+        let rule_index = line_vec.first().unwrap().trim();
+        let _ = run_command(
+            format!("sudo iptables -t nat -D PREROUTING {}", rule_index).as_str(),
+            sudo_password,
+        )
+        .unwrap();
     }
-
-    if line_str.is_none() {
-        return Err(format!("Not found {}", target_ip));
-    }
-
-    let line_row = line_str.unwrap();
-    let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
-
-    // Get ip index, delete we need this
-    let rule_index = line_vec.first().unwrap().trim();
-    let _ = run_command(
-        format!("sudo iptables -t nat -D PREROUTING {}", rule_index).as_str(),
-        sudo_password,
-    )
-    .unwrap();
     Ok(())
 }
 
 fn delete_postrouting(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
-    let res = run_command(
-        "sudo iptables -t nat -vnL POSTROUTING --line",
-        sudo_password,
-    );
-    let mut line_str: Option<String> = None;
-    for i in res.unwrap() {
-        if i.contains(target_ip) {
-            line_str = Some(i);
+    loop {
+        let res = run_command(
+            "sudo iptables -t nat -vnL POSTROUTING --line",
+            sudo_password,
+        );
+        let mut line_str: Option<String> = None;
+        for i in res.unwrap() {
+            if i.contains(target_ip) {
+                line_str = Some(i);
+                break;
+            }
+        }
+
+        if line_str.is_none() {
             break;
         }
+
+        let line_row = line_str.unwrap();
+        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
+
+        // Get ip index, delete we need this
+        let rule_index = line_vec.first().unwrap().trim();
+        let _ = run_command(
+            format!("sudo iptables -t nat -D POSTROUTING {}", rule_index).as_str(),
+            sudo_password,
+        )
+        .unwrap();
     }
-
-    if line_str.is_none() {
-        return Err(format!("Not found {}", target_ip));
-    }
-
-    let line_row = line_str.unwrap();
-    let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
-
-    // Get ip index, delete we need this
-    let rule_index = line_vec.first().unwrap().trim();
-    let _ = run_command(
-        format!("sudo iptables -t nat -D POSTROUTING {}", rule_index).as_str(),
-        sudo_password,
-    )
-    .unwrap();
     Ok(())
 }
 
 fn delete_forward(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
-    let res = run_command("sudo iptables -t filter -vnL FORWARD --line", sudo_password);
-    let mut line_str: Option<String> = None;
-    for i in res.unwrap() {
-        if i.contains(target_ip) {
-            line_str = Some(i);
+    loop {
+        let res = run_command("sudo iptables -t filter -vnL FORWARD --line", sudo_password);
+        let mut line_str: Option<String> = None;
+        for i in res.unwrap() {
+            if i.contains(target_ip) {
+                line_str = Some(i);
+                break;
+            }
+        }
+
+        if line_str.is_none() {
             break;
         }
+
+        let line_row = line_str.unwrap();
+        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
+
+        // Get ip index, delete we need this
+        let rule_index = line_vec.first().unwrap().trim();
+        let _ = run_command(
+            format!("sudo iptables -t filter -D FORWARD {}", rule_index).as_str(),
+            sudo_password,
+        )
+        .unwrap();
     }
-
-    if line_str.is_none() {
-        return Err(format!("Not found {}", target_ip));
-    }
-
-    let line_row = line_str.unwrap();
-    let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
-
-    // Get ip index, delete we need this
-    let rule_index = line_vec.first().unwrap().trim();
-    let _ = run_command(
-        format!("sudo iptables -t filter -D FORWARD {}", rule_index).as_str(),
-        sudo_password,
-    )
-    .unwrap();
     Ok(())
 }
 
