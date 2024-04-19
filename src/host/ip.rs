@@ -6,12 +6,12 @@ use std::io::Write;
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Host {
     pub list: Vec<Info>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Info {
     pub ip: String,
     pub target_port: String,
@@ -108,17 +108,19 @@ pub fn delete_host(ip: &str) {
 /// Get All Target Host Info
 ///
 pub fn host_list() -> Option<Host> {
-    let content = File::open(host_path()).expect("Failed opening file");
 
-    let config: Host = match from_reader(content) {
-        Ok(x) => x,
-        Err(e) => {
-            println!("Failed to load config: {}", e);
-            return None;
-        }
-    };
-
-    Some(config)
+    let mut data = Host::default();
+    if let Ok(content) = File::open(host_path()) {
+         data = match from_reader(content) {
+            Ok(x) => x,
+            Err(e) => {
+                println!("Failed to load config: {}", e);
+                return None;
+            }
+        };
+    }
+    
+    Some(data)
 }
 
 ///
