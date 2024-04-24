@@ -1,4 +1,4 @@
-use iptables_forward::service;
+use traffic_forward::service;
 
 
 #[test]

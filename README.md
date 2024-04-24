@@ -8,9 +8,9 @@ Deployed on the forwarding server, it already provides the most basic functions:
 1. Clone:
 
 ```
-git clone https://github.com/bigbug-gg/iptables_forward.git
+git clone https://github.com/bigbug-gg/traffic_forward.git
 
-cd iptables_forward
+cd traffic_forward
 ```
 
 2. Run 
@@ -118,3 +118,29 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 	}
 }
 ```
+
+# Enable packet forwarding 
+
+To enable packet forwarding on a Linux system, you can follow these steps:
+
+Temporary Enable Packet Forwarding:
+Run the following command in the terminal to temporarily enable packet forwarding:
+
+sudo sysctl -w net.ipv4.ip_forward=1
+If you need to enable IPv6 packet forwarding, you can use:
+
+sudo sysctl -w net.ipv6.conf.all.forwarding=1
+Permanently Enable Packet Forwarding:
+If you want packet forwarding to remain enabled after a system reboot, edit the /etc/sysctl.conf file and add the following line:
+
+net.ipv4.ip_forward = 1
+For IPv6 packet forwarding, you can add:
+
+net.ipv6.conf.all.forwarding = 1
+Save the file and then run the following command to apply the changes:
+
+sudo sysctl -p
+Firewall Settings:
+If you are using a firewall, make sure to allow forwarded packets to pass through. You may need to adjust firewall rules to allow packets to be forwarded from one interface to another.
+
+Please note that enabling packet forwarding can increase network security risks as it allows packets to be transmitted between different network interfaces. Make sure to enable packet forwarding only when necessary and take appropriate security measures to protect your system.

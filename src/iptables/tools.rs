@@ -1,5 +1,10 @@
+
+
+use nix::libc::getuid;
+
 use rexpect::spawn;
-use std::{process::Command, thread};
+use std::{io::BufRead, process::{Command}, thread};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,12 +60,13 @@ pub fn add(
         forward_up.as_str(),
         forward_down.as_str(),
     ];
-    
 
     let mut hands = Vec::new();
     for command in command_vec {
         let a = command.to_owned();
-        let p = if user_password.is_none() { "" } else { 
+        let p = if user_password.is_none() {
+            ""
+        } else {
             user_password.unwrap()
         };
         let p = p.to_owned();
@@ -116,25 +122,24 @@ pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String
     ];
 
     let mut handles = Vec::new();
-    for su_fn  in fn_list {
-
+    for su_fn in fn_list {
         let a = target_ip.to_owned();
-        let p = if sudo_password.is_none() { "" } else { 
+        let p = if sudo_password.is_none() {
+            ""
+        } else {
             sudo_password.unwrap()
         };
         let p = p.to_owned();
 
-        let h = thread::spawn(move|| {
-            su_fn(&a, Some(&p))
-        });
+        let h = thread::spawn(move || su_fn(&a, Some(&p)));
         handles.push(h);
     }
 
     let mut error: String = String::new();
-    for h in handles  {
-       if let Err(e) =  h.join().unwrap() {
+    for h in handles {
+        if let Err(e) = h.join().unwrap() {
             error.push_str(&e);
-       }
+        }
     }
 
     if error.len() > 0 {
@@ -350,6 +355,7 @@ fn generate_forward_command(
 /// If Need password, need set passworld else set  None
 ///
 fn run_command(command: &str, password: Option<&str>) -> Result<Vec<String>, String> {
+    return run_command_v2(command, password);
     let mut session = spawn(command, None).unwrap();
 
     let need_password = session.exp_regex("password");
@@ -375,6 +381,67 @@ fn run_command(command: &str, password: Option<&str>) -> Result<Vec<String>, Str
     let _ = session.send_line("exit\r").unwrap();
     let _ = session.exp_eof().unwrap();
     Ok(res)
+}
+
+
+pub fn ls() {
+    let data = run_command_v2("ls -lh", None);
+    if let Ok(d) = data {
+        for i in d  {
+            println!("{i}");
+        }
+    }
+   
+}
+
+fn run_command_v2(command_str: &str, _: Option<&str>) -> Result<Vec<String>, String> {
+
+    if !is_root() {
+        panic!("Please use the root account to run");
+    }
+
+    let mut command_vec: Vec<&str> = command_str.split(' ').collect();
+    if command_vec.len() <= 0 {
+        return Err("Please enter a valid command".to_string());
+    }
+
+    let mut first_command = String::new();
+
+    loop {
+        if !first_command.is_empty() && !first_command.eq("sudo") {
+            break;
+        }
+        first_command = command_vec.first().unwrap().to_string();
+        command_vec.remove(0);
+    }
+
+    if first_command.is_empty() {
+        return Err("No valid instructions detected".to_string())
+    }
+
+    let mut res = Vec::new();
+
+    // build and run command.
+    let mut comand = Command::new(first_command);
+    for arg in command_vec {
+        comand.arg(arg);
+    }
+
+    let output = comand.output().expect("Can not get data.");
+    for line in output.stdout.lines() {
+        if let Ok(i) = line {
+            res.push(i);
+        } else {
+            return Err(line.err().unwrap().to_string());
+        }
+    }
+   
+    Ok(res)
+}
+
+pub fn is_root() -> bool {
+    let uid = unsafe { getuid() };
+    uid == 0
 }
 
 ///

@@ -7,7 +7,7 @@ pub mod web;
 /// enter
 /// 
 pub fn run() {
-    println!("Hi, iptables_forward");
+    println!("Hi, traffic_forward");
 }
 
 ///

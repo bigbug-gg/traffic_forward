@@ -385,6 +385,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cfg_aliases"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
+
+[[package]]
 name = "clap"
 version = "4.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -730,20 +736,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iptables_forward"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "clap",
- "env_logger",
- "log",
- "rexpect",
- "ron",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -863,6 +855,18 @@ dependencies = [
  "libc",
  "memoffset",
  "pin-utils",
+]
+
+[[package]]
+name = "nix"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab2156c4fce2f8df6c499cc1c763e4394b7482525bf2a9701c9d79d215f519e4"
+dependencies = [
+ "bitflags 2.5.0",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -1044,7 +1048,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01ff60778f96fb5a48adbe421d21bf6578ed58c0872d712e7e08593c195adff8"
 dependencies = [
  "comma",
- "nix",
+ "nix 0.25.1",
  "regex",
  "tempfile",
  "thiserror",
@@ -1351,6 +1355,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "traffic_forward"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "clap",
+ "env_logger",
+ "log",
+ "nix 0.28.0",
+ "rexpect",
+ "ron",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

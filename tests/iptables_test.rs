@@ -1,4 +1,4 @@
-use iptables_forward::iptables::tools;
+use traffic_forward::iptables::tools;
 
 #[test]
 fn one_forward() {
@@ -12,6 +12,12 @@ fn one_forward() {
         Some("root"),
     );
     assert!(res.is_ok(), "error: {}", res.err().unwrap());
+}
+
+
+#[test]
+fn test_ls() {
+    tools::ls();
 }
 
 
