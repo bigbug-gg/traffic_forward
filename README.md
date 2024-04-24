@@ -1,4 +1,4 @@
-# iptables_forward
+# Traffic forwarding
 
 > Traffic forwarding：Enable traffic redirection through Linux iptables using a Web API.
 
