@@ -1,32 +1,85 @@
-# Traffic forward
+# Traffic Forwarding
 
-> Traffic forwarding：Enable traffic redirection through Linux iptables using a Web API.
+> Traffic Forwarding
 
-# Usage
+*Read this in other languages:  [中文](README.cn.md).*
+# Quick Start
 
-Deployed on the forwarding server, it already provides the most basic functions: adding forwarding, deleting forwarding, and viewing the forwarding list. If the current functionality does not meet your requirements, please customize it according to your actual needs.
-1. Clone:
+Prerequisite: The server already has a `Rust` environment.
 
-```
-git clone https://github.com/bigbug-gg/traffic_forward.git
+## Installation:
 
-cd traffic_forward
-```
-
-2. Run 
-
-```
-# build Or Install if you want.
-cargo run
+```bash
+cargo install traffic_forward
 ```
 
-# Api
+Upon successful installation, you will see the following path:
+```bash
+...
+ Compiling clap v4.5.4
+   Compiling ron v0.8.1
+   Compiling traffic_forward v0.1.0
+    Finished release [optimized] target(s) in 2m 17s
+  Installing /home/youre_account/.cargo/bin/traffic_forward
+   Installed package `traffic_forward v0.1.0` (executable `traffic_forward`)
+```
 
-## Default Path:
+【Non-root Account】 Add a soft link to `/usr/bin`：
 
-0.0.0.0:8080
+```
+sudo ln -s /home/youre_account/.cargo/bin/traffic_forward /usr/bin/traffic_forward
+```
 
-## add forward rule
+View version:
+``` bash
+traffic_forward --version
+traffic_forward 0.1.0
+```
+
+Or:
+``` bash
+sudo traffic_forward --version
+traffic_forward 0.1.0
+```
+
+---
+
+## Usage：
+
+* Add forwarding：
+
+```bash
+# Use local port 5555 to forward to 192.102.11.44:8000
+sudo traffic_forward add 192.102.11.44:8000 5555
+```
+
+* List of existing rules:
+```
+sudo traffic_forward list
+0.0.0.0:5555 -> 192.102.11.44:8000
+```
+
+* Query traffic consumption for a specific IP:
+```
+sudo traffic_forward query 192.102.11.44
+```
+
+* Delete forwarding rule for a specific IP:
+```bash
+sudo traffic_forward delete 192.102.11.44
+Delete completed
+```
+
+* Start the web API:
+```bash
+ sudo traffic_forward web
+```
+
+---
+
+## Web API Interface
+
+Add
 * uri: iptables/add
 * method: post
 * request
@@ -35,7 +88,6 @@ cargo run
 	"target_ip": "192.168.50.50",
 	"target_port": "4488",
 	"local_port": "4433",
-	"user_password": "sudo_password"
 }
 ```
 
@@ -48,44 +100,13 @@ cargo run
 }
 ```
 
-Generation rules:
-
-```bash
-root@bigbug-gg:/# iptables -t nat -nvL
-Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
-    0     0 DNAT       udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:4433 to:192.168.50.50:4488
-    0     0 DNAT       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:4433 to:192.168.50.50:4488
-
-Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
-
-Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
-
-Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
-    0     0 SNAT       udp  --  *      *       0.0.0.0/0            192.168.50.50        udp dpt:4488 to:192.168.17.131
-    0     0 SNAT       tcp  --  *      *       0.0.0.0/0            192.168.50.50        tcp dpt:4488 to:192.168.17.131
-
-root@bigbug-gg:/# iptables -t filter -vnL FORWARD
-Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
-    0     0            udp  --  *      *       192.168.50.50        0.0.0.0/0            udp dpt:4488
-    0     0            udp  --  *      *       0.0.0.0/0            192.168.50.50        udp dpt:4488
-    0     0            tcp  --  *      *       0.0.0.0/0            192.168.50.50        tcp dpt:4488
-    0     0            tcp  --  *      *       192.168.50.50        0.0.0.0/0            tcp dpt:4488
-
-```
-
-## delete forward rule
+Delete
 * uri: iptables/del
 * method: post
 * request
 ```
 {
-	"target_ip": "192.168.50.50",
-	"user_password": "sudo_password"
+	"target_ip": "192.168.50.50"
 }
 ```
 
@@ -98,7 +119,7 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 }
 ```
 
-## List of forward rule
+List
 * uri: iptables/list
 * method: get
 * request: empty (change next version will) 
@@ -119,28 +140,6 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 }
 ```
 
-# Enable packet forwarding 
+---
 
-To enable packet forwarding on a Linux system, you can follow these steps:
-
-Temporary Enable Packet Forwarding:
-Run the following command in the terminal to temporarily enable packet forwarding:
-
-sudo sysctl -w net.ipv4.ip_forward=1
-If you need to enable IPv6 packet forwarding, you can use:
-
-sudo sysctl -w net.ipv6.conf.all.forwarding=1
-Permanently Enable Packet Forwarding:
-If you want packet forwarding to remain enabled after a system reboot, edit the /etc/sysctl.conf file and add the following line:
-
-net.ipv4.ip_forward = 1
-For IPv6 packet forwarding, you can add:
-
-net.ipv6.conf.all.forwarding = 1
-Save the file and then run the following command to apply the changes:
-
-sudo sysctl -p
-Firewall Settings:
-If you are using a firewall, make sure to allow forwarded packets to pass through. You may need to adjust firewall rules to allow packets to be forwarded from one interface to another.
-
-Please note that enabling packet forwarding can increase network security risks as it allows packets to be transmitted between different network interfaces. Make sure to enable packet forwarding only when necessary and take appropriate security measures to protect your system.
+# If the rules are successfully written but cannot be used normally to implement traffic proxy, please ensure that Linux has enabled forwarding.
