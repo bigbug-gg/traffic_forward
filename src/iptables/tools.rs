@@ -1,9 +1,6 @@
-
-
 use nix::libc::getuid;
 
-use rexpect::spawn;
-use std::{io::BufRead, process::{Command}, thread};
+use std::{io::BufRead, process::Command, thread};
 
 #[cfg(test)]
 mod tests {
@@ -13,7 +10,7 @@ mod tests {
     fn test_prerouting() {
         let pre_str = generate_prerouting_command("2002", "192.168.2.2", "4004", "tcp", None);
         println!("prerouting: {}", pre_str);
-        assert_eq!("sudo iptables -t nat -I PREROUTING -p tcp --dport 2002 -j DNAT --to-destination 192.168.2.2:4004", pre_str);
+        assert_eq!("iptables -t nat -I PREROUTING -p tcp --dport 2002 -j DNAT --to-destination 192.168.2.2:4004", pre_str);
     }
 }
 
@@ -27,7 +24,6 @@ pub fn add(
     comment: Option<&str>,
     protocol: Option<&str>,
     self_ip: Option<&str>,
-    user_password: Option<&str>,
 ) -> Result<(), String> {
     // if not protocol set default tcp
     let _protocl = if protocol.is_none() {
@@ -64,14 +60,8 @@ pub fn add(
     let mut hands = Vec::new();
     for command in command_vec {
         let a = command.to_owned();
-        let p = if user_password.is_none() {
-            ""
-        } else {
-            user_password.unwrap()
-        };
-        let p = p.to_owned();
         let one = thread::spawn(move || {
-            let _ = run_command(&a, Some(&p));
+            let _ = run_command(&a);
         });
         hands.push(one);
     }
@@ -83,14 +73,22 @@ pub fn add(
     Ok(())
 }
 
+
+
 ///
-/// Check
+/// Traffic (Unit: byte)
+/// 
+#[derive(Debug)]
+pub struct  Traffic{
+    pub up: u64,
+    pub down: u64
+}
+
 ///
-pub fn traffic(target_ip: &str, sudo_password: Option<&str>) -> Result<(u64, u64), String> {
-    let res = run_command(
-        "sudo iptables -t filter -vxnL FORWARD --line",
-        sudo_password,
-    );
+/// Check 
+///
+pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
+    let res = run_command("iptables -t filter -vxnL FORWARD --line");
     let mut up = 0;
     let mut down = 0;
 
@@ -106,7 +104,10 @@ pub fn traffic(target_ip: &str, sudo_password: Option<&str>) -> Result<(u64, u64
             down += m.get(1).unwrap().parse::<u64>().unwrap();
         }
     }
-    Ok((up, down))
+    Ok(Traffic{
+        up,
+        down
+    })
 }
 
 ///
@@ -114,24 +115,17 @@ pub fn traffic(target_ip: &str, sudo_password: Option<&str>) -> Result<(u64, u64
 ///
 /// get target ip and delete all of forward config with they.
 ///
-pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
+pub fn delete(target_ip: &str) -> Result<(), String> {
     let fn_list = vec![
-        |a: &str, p: Option<&str>| delete_forward(a, p),
-        |a: &str, p: Option<&str>| delete_postrouting(a, p),
-        |a: &str, p: Option<&str>| delete_prerouting(a, p),
+        |a: &str| delete_forward(a),
+        |a: &str| delete_postrouting(a),
+        |a: &str| delete_prerouting(a),
     ];
 
     let mut handles = Vec::new();
     for su_fn in fn_list {
         let a = target_ip.to_owned();
-        let p = if sudo_password.is_none() {
-            ""
-        } else {
-            sudo_password.unwrap()
-        };
-        let p = p.to_owned();
-
-        let h = thread::spawn(move || su_fn(&a, Some(&p)));
+        let h = thread::spawn(move || su_fn(&a));
         handles.push(h);
     }
 
@@ -149,9 +143,9 @@ pub fn delete(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String
     return Ok(());
 }
 
-fn delete_prerouting(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
+fn delete_prerouting(target_ip: &str) -> Result<(), String> {
     loop {
-        let res = run_command("sudo iptables -t nat -vnL PREROUTING --line", sudo_password);
+        let res = run_command("iptables -t nat -vnL PREROUTING --line");
         let mut line_str: Option<String> = None;
         for i in res.unwrap() {
             if i.contains(target_ip) {
@@ -170,19 +164,17 @@ fn delete_prerouting(target_ip: &str, sudo_password: Option<&str>) -> Result<(),
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();
         let _ = run_command(
-            format!("sudo iptables -t nat -D PREROUTING {}", rule_index).as_str(),
-            sudo_password,
+            format!("iptables -t nat -D PREROUTING {}", rule_index).as_str()
         )
         .unwrap();
     }
     Ok(())
 }
 
-fn delete_postrouting(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
+fn delete_postrouting(target_ip: &str) -> Result<(), String> {
     loop {
         let res = run_command(
-            "sudo iptables -t nat -vnL POSTROUTING --line",
-            sudo_password,
+            "iptables -t nat -vnL POSTROUTING --line"
         );
         let mut line_str: Option<String> = None;
         for i in res.unwrap() {
@@ -202,17 +194,16 @@ fn delete_postrouting(target_ip: &str, sudo_password: Option<&str>) -> Result<()
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();
         let _ = run_command(
-            format!("sudo iptables -t nat -D POSTROUTING {}", rule_index).as_str(),
-            sudo_password,
+            format!("iptables -t nat -D POSTROUTING {}", rule_index).as_str()
         )
         .unwrap();
     }
     Ok(())
 }
 
-fn delete_forward(target_ip: &str, sudo_password: Option<&str>) -> Result<(), String> {
+fn delete_forward(target_ip: &str) -> Result<(), String> {
     loop {
-        let res = run_command("sudo iptables -t filter -vnL FORWARD --line", sudo_password);
+        let res = run_command("iptables -t filter -vnL FORWARD --line");
         let mut line_str: Option<String> = None;
         for i in res.unwrap() {
             if i.contains(target_ip) {
@@ -231,8 +222,7 @@ fn delete_forward(target_ip: &str, sudo_password: Option<&str>) -> Result<(), St
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();
         let _ = run_command(
-            format!("sudo iptables -t filter -D FORWARD {}", rule_index).as_str(),
-            sudo_password,
+            format!("iptables -t filter -D FORWARD {}", rule_index).as_str()
         )
         .unwrap();
     }
@@ -249,18 +239,18 @@ fn generate_prerouting_command(
     protocol: &str,
     comment: Option<&str>,
 ) -> String {
-    let mut command_str = String::from("sudo iptables -t nat -I PREROUTING");
+    let mut command_str = String::from("iptables -t nat -I PREROUTING");
 
-    // like: sudo iptables -t nat -I PREROUTING -p tcp --dport 8083
+    // like: iptables -t nat -I PREROUTING -p tcp --dport 8083
     command_str += format!(" -p {} --dport {}", protocol, local_port).as_str();
 
     let port_str = format!(" -j DNAT --to-destination {}:{}", target_ip, target_port);
 
-    // like: sudo iptables -t nat -I PREROUTING -p tcp --dport 8083 -j DNAT --to-destination target_ip:target_port
+    // like: iptables -t nat -I PREROUTING -p tcp --dport 8083 -j DNAT --to-destination target_ip:target_port
     command_str += port_str.as_str();
 
     if comment.is_some() {
-        // like: sudo iptables -t nat -I PREROUTING -p tcp
+        // like: iptables -t nat -I PREROUTING -p tcp
         command_str += format!(" -m comment --comment \"{}\"", comment.unwrap()).as_str();
     }
 
@@ -277,9 +267,9 @@ fn generate_postrouting_command(
     comment: Option<&str>,
     self_host_ip: Option<&str>,
 ) -> Result<String, String> {
-    let mut command_str = format!("sudo iptables -t nat -I POSTROUTING -d {}", target_ip);
+    let mut command_str = format!("iptables -t nat -I POSTROUTING -d {}", target_ip);
 
-    // sudo iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port
+    // iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port
     command_str += format!(" -p {} --dport {}", protocol, target_port).as_str();
 
     let self_ip = if self_host_ip.is_none() {
@@ -288,11 +278,11 @@ fn generate_postrouting_command(
         self_host_ip.unwrap().to_string()
     };
 
-    // like: sudo iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip
+    // like: iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip
     command_str += format!(" -j SNAT --to-source {}", self_ip).as_str();
 
     if comment.is_some() {
-        // like: sudo iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip -m comment --comment "Postrouting"
+        // like: iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip -m comment --comment "Postrouting"
         command_str += format!(" -m comment --comment \"{}\"", comment.unwrap()).as_str();
     }
 
@@ -318,11 +308,11 @@ fn generate_forward_command(
     comment: Option<&str>,
     protocol: Option<&str>,
 ) -> Result<ForwardCommand, String> {
-    let mut command_up_str = format!("sudo iptables -t filter -I FORWARD -d {}", target_ip);
-    let mut command_down_str = format!("sudo iptables -t filter -I FORWARD -s {}", target_ip);
+    let mut command_up_str = format!("iptables -t filter -I FORWARD -d {}", target_ip);
+    let mut command_down_str = format!("iptables -t filter -I FORWARD -s {}", target_ip);
 
     if protocol.is_some() {
-        // like: sudo iptables -t nat -I FORWARD -d target_ip -p udp --dport target_port
+        // like: iptables -t nat -I FORWARD -d target_ip -p udp --dport target_port
         command_up_str += format!(
             " -p {} --dport {}",
             protocol.unwrap().to_lowercase(),
@@ -338,7 +328,7 @@ fn generate_forward_command(
     }
 
     if comment.is_some() {
-        // like: sudo iptables -t nat -I FORWARD -s target_ip -p udp --dport target_port -m comment --comment "..."
+        // like: iptables -t nat -I FORWARD -s target_ip -p udp --dport target_port -m comment --comment "..."
         command_up_str += format!(" -m comment --comment \"{}\"", comment.unwrap()).as_str();
         command_down_str += format!(" -m comment --comment \"{}\"", comment.unwrap()).as_str();
     }
@@ -350,51 +340,9 @@ fn generate_forward_command(
 }
 
 ///
-/// Run command
-///
-/// If Need password, need set passworld else set  None
-///
-fn run_command(command: &str, password: Option<&str>) -> Result<Vec<String>, String> {
-    return run_command_v2(command, password);
-    let mut session = spawn(command, None).unwrap();
-
-    let need_password = session.exp_regex("password");
-    if need_password.is_ok() {
-        // need password, but not set, exit
-        if password.is_none() {
-            let _ = session.send_line("exit").unwrap();
-            let _ = session.exp_eof().unwrap();
-            return Err("Need passwrord".to_string());
-        }
-        let _ = session.send_line(password.unwrap());
-    }
-
-    let mut res = Vec::new();
-    loop {
-        let i = session.read_line();
-        if i.is_err() {
-            break;
-        }
-        res.push(i.unwrap());
-    }
-
-    let _ = session.send_line("exit\r").unwrap();
-    let _ = session.exp_eof().unwrap();
-    Ok(res)
-}
-
-
-pub fn ls() {
-    let data = run_command_v2("ls -lh", None);
-    if let Ok(d) = data {
-        for i in d  {
-            println!("{i}");
-        }
-    }
-   
-}
-
-fn run_command_v2(command_str: &str, _: Option<&str>) -> Result<Vec<String>, String> {
+/// Command fn
+/// 
+fn run_command(command_str: &str) -> Result<Vec<String>, String> {
 
     if !is_root() {
         panic!("Please use the root account to run");

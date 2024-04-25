@@ -9,27 +9,20 @@ fn one_forward() {
         None,
         None,
         None,
-        Some("root"),
     );
     assert!(res.is_ok(), "error: {}", res.err().unwrap());
 }
 
 
 #[test]
-fn test_ls() {
-    tools::ls();
-}
-
-
-#[test]
 fn del_forward() {
-    let res = tools::delete("183.232.232.10", Some("root"));
+    let res = tools::delete("183.232.232.10");
     assert!(res.is_ok(), "error: {}", res.err().unwrap());
 }
 
 #[test]
 fn test_traffic() {
-    let res = tools::traffic("183.232.232.10", Some("root"));
+    let res = tools::traffic("183.232.232.10");
     println!("{:?}", res);
     assert!(res.is_ok(), "error: {}", res.err().unwrap());
 }

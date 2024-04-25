@@ -12,7 +12,6 @@ async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
         &info.target_ip,
         &info.target_port,
         &info.local_port,
-        Some(&info.user_password),
     );
 
     if let Err(e) = data {
@@ -24,7 +23,7 @@ async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
 
 #[post("/del")]
 async fn del_iptables(info: web::Json<IptableIp>) -> Result<impl Responder> {
-    let data = service::del(&info.target_ip, Some(&info.user_password));
+    let data = service::del(&info.target_ip);
 
     if let Err(e) = data {
         Ok(JsonData::response(Some(&e), None))
@@ -44,13 +43,11 @@ struct AddIptable {
     target_ip: String,
     target_port: String,
     local_port: String,
-    user_password: String,
 }
 
 #[derive(Deserialize)]
 struct IptableIp {
     target_ip: String,
-    user_password: String,
 }
 
 #[derive(Serialize)]

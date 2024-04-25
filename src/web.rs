@@ -1,4 +1,5 @@
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
+use log::info;
 
 
 pub(crate) mod forward;
@@ -15,7 +16,8 @@ pub async fn run() -> Result<(), std::io::Error> {
     std::env::set_var("RUST_LOG", "info");
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
-
+   
+    info!("Access address: http://localhost:8080");
     HttpServer::new(|| {
         let logger = Logger::default();
         App::new()

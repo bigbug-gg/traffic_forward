@@ -3,8 +3,12 @@ name = "traffic_forward"
 version = "0.1.0"
 edition = "2021"
 authors = ["bigbug-gg <bigbug-gg@qq.com>"]
-description = "Enable traffic redirection through Linux iptables using a Web API."
-license = "MIT"
+description = "Support for Linux traffic forwarding settings via both the console and a web API."
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/bigbug-gg/traffic_forward"
+repository = "https://github.com/bigbug-gg/traffic_forward"
+keywords = ["cli", "forward"]
+categories = ["traffic-forward"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

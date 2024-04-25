@@ -1,4 +1,4 @@
-# Traffic forwarding
+# Traffic forward
 
 > Traffic forwarding：Enable traffic redirection through Linux iptables using a Web API.
 

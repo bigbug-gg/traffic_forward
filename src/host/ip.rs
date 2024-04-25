@@ -1,14 +1,27 @@
 #[allow(dead_code)]
 use std::fs::File;
-use std::io::Write;
-
-
+use std::{env, fmt::Display, io::Write};
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Host {
     pub list: Vec<Info>,
+}
+
+impl Display for Host {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
+        if self.list.len() <= 0 {
+            write!(f, "No Data")?;    
+        }
+
+        for i in &self.list {
+            write!(f, "0.0.0.0:{} -> {}:{}", i.local_port, i.ip, i.target_port)?;
+        }
+        
+        Ok(())
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
@@ -126,6 +139,11 @@ pub fn host_list() -> Option<Host> {
 ///
 /// Host Path
 ///
-fn host_path() -> &'static str {
-    "src/host/host.ron"
+fn host_path() -> String {
+    match env::home_dir() {
+        Some(path) => {
+            format!("{}/.traffic_forward.ron", path.display())
+        },
+        None => panic!(""),
+    }
 }
