@@ -1,13 +1,13 @@
 [package]
 name = "traffic_forward"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["bigbug-gg <bigbug-gg@qq.com>"]
 description = "Support for Linux traffic forwarding settings via both the console and a web API."
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/bigbug-gg/traffic_forward"
 repository = "https://github.com/bigbug-gg/traffic_forward"
-keywords = ["cli", "forward"]
+keywords = ["cli", "forward", "tools"]
 categories = ["traffic-forward"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

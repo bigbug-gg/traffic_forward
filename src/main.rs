@@ -91,7 +91,7 @@ enum Commands {
                 return;
             }
 
-            println!("Delete completed");
+            println!("{}", is_ok.unwrap());
             return;
         },
         

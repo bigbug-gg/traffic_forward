@@ -17,7 +17,7 @@ impl Display for Host {
         }
 
         for i in &self.list {
-            write!(f, "0.0.0.0:{} -> {}:{}", i.local_port, i.ip, i.target_port)?;
+            write!(f, "0.0.0.0:{} -> {}:{}\n", i.local_port, i.ip, i.target_port)?;
         }
         
         Ok(())

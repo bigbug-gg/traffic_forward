@@ -3,9 +3,23 @@
 > 流量转发
 
 *Read this in other languages: [English](README.md).*
+
+## 软件工作流程
+
+![](how_does_it_work.png)
+
+
 # 快速上手
 
-前提： 服务器已经有 `Rust` 环境。
+
+## 前提、
+* 必须是 Linux 服务器。
+* 已经开启了流量转发。【95% 的人都没有做这一步】
+* 安装 `Rust`环境。
+
+## 说明
+
+本工具只是代替书写 `iptables` 规则，用一条命令解决多条配置，因为使用到了 `iptables` ,所以需要使用 `root` 账户操作。
 
 ## 安装:
 
@@ -144,4 +158,34 @@ Delete completed
 
 ---
 
-# 写入规则成功，但无法正常使用端口实现流量代理，请确保 Linux 已开启转发
+# 演示用例
+
+``` bash
+$ sudo traffic_forward -V
+traffic_forward 0.1.2
+
+$ sudo traffic_forward add 192.168.11.11:3389 2233
+Add completed
+
+$ sudo traffic_forward list
+0.0.0.0:5000 -> 192.145.2.22:323
+0.0.0.0:2233 -> 192.168.11.11:3389
+
+$ sudo traffic_forward query 192.168.11.11
+Up: 0 KB 
+Down: 0 KB
+
+$ sudo traffic_forward delete 192.168.11.11
+Delete completed
+
+$ sudo traffic_forward query 192.168.11.11
+Query error: No matching IP found
+
+$ sudo traffic_forward list
+0.0.0.0:5000 -> 192.145.2.22:323
+
+```
+
+# license 
+
+MIT OR Apache-2.0

@@ -1,6 +1,6 @@
 use nix::libc::getuid;
 
-use std::{io::BufRead, process::Command, thread};
+use std::{fmt::Display, io::BufRead, process::Command, thread};
 
 #[cfg(test)]
 mod tests {
@@ -82,6 +82,12 @@ pub fn add(
 pub struct  Traffic{
     pub up: u64,
     pub down: u64
+}
+
+impl Display for Traffic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Up: {} KB \nDown: {} KB", self.up, self.down)
+    }
 }
 
 ///

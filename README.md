@@ -3,11 +3,24 @@
 > Traffic Forwarding
 
 *Read this in other languages:  [中文](README.cn.md).*
+
+# How does it work?
+
+![](how_does_it_work.png)
+
 # Quick Start
 
-Prerequisite: The server already has a `Rust` environment.
+## Prerequisite 
+* Must be a Linux operating environment.
+* The server has enabled traffic forwarding.【95% of people did not take this step】
+* The server already has a `Rust` environment.
+
+## illustrate
+
+This tool only replaces writing `iptables` rules and solves multiple configurations with one command. As `iptables` is used, `root` account operations are required.
 
 ## Installation:
+
 
 ```bash
 cargo install traffic_forward
@@ -77,7 +90,13 @@ Delete completed
 
 ---
 
-## Web API Interface
+
+
+## Start web API
+
+```bash
+traffic_forward web
+```
 
 Add
 * uri: iptables/add
@@ -140,6 +159,30 @@ List
 }
 ```
 
----
+# Use demo
 
-# If the rules are successfully written but cannot be used normally to implement traffic proxy, please ensure that Linux has enabled forwarding.
+``` bash
+$ sudo traffic_forward -V
+traffic_forward 0.1.2
+
+$ sudo traffic_forward add 192.168.11.11:3389 2233
+Add completed
+
+$ sudo traffic_forward list
+0.0.0.0:5000 -> 192.145.2.22:323
+0.0.0.0:2233 -> 192.168.11.11:3389
+
+$ sudo traffic_forward query 192.168.11.11
+Up: 0 KB 
+Down: 0 KB
+
+$ sudo traffic_forward delete 192.168.11.11
+Delete completed
+
+$ sudo traffic_forward query 192.168.11.11
+Query error: No matching IP found
+
+$ sudo traffic_forward list
+0.0.0.0:5000 -> 192.145.2.22:323
+
+```
