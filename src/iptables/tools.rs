@@ -56,8 +56,6 @@ pub fn add(
         forward_up.as_str(),
         forward_down.as_str(),
     ];
-
-    println!("{:#?}", command_vec);
     let mut hands = Vec::new();
     for command in command_vec {
         let a = command.to_owned();
