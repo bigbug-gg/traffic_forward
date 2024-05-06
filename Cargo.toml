@@ -1,6 +1,6 @@
 [package]
 name = "traffic_forward"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["bigbug-gg <bigbug-gg@qq.com>"]
 description = "Support for Linux traffic forwarding settings via both the console and a web API."

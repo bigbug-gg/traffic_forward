@@ -4,9 +4,26 @@
 
 *Read this in other languages: [English](README.md).*
 
-## 软件工作流程
+# 它能干嘛？
 
-![](how_does_it_work.png)
+这个就一个便捷工具，帮助编写 iptables 的转发规则，因为正确的书写转发规则需要多条命令，但是，用这个工具，就可以一条命令搞定！
+
+比如添加转发规则:
+```bash
+sudo traffic_forward add 193.23.11.3:3333 9988
+```
+等同于:
+```bash
+iptables -t nat -I PREROUTING -p tcp --dport 9988 -j DNAT --to-destination 193.23.11.3:3333
+iptables -t nat -I POSTROUTING -d 193.23.11.3 -p tcp --dport 3333 -j SNAT --to-source 192.168.17.131
+iptables -t filter -I FORWARD -d 193.23.11.3 -p tcp --dport 3333
+iptables -t filter -I FORWARD -s 193.23.11.3 -p tcp --dport 3333
+iptables -t nat -I PREROUTING -p udp --dport 9988 -j DNAT --to-destination 193.23.11.3:3333
+iptables -t nat -I POSTROUTING -d 193.23.11.3 -p udp --dport 3333 -j SNAT --to-source 192.168.17.131
+iptables -t filter -I FORWARD -d 193.23.11.3 -p udp --dport 3333
+iptables -t filter -I FORWARD -s 193.23.11.3 -p udp --dport 3333
+```
+
 
 
 # 快速上手

@@ -1,12 +1,29 @@
-# Traffic Forwarding
+# Traffic Forward
 
 > Traffic Forwarding
 
 *Read this in other languages:  [中文](README.cn.md).*
 
-# How does it work?
+# What is this
 
-![](how_does_it_work.png)
+This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
+
+It creates three iptables rules with one command:
+```bash
+sudo traffic_forward add 193.23.11.3:3333 9988
+```
+Equivalent to:
+```bash
+iptables -t nat -I PREROUTING -p tcp --dport 9988 -j DNAT --to-destination 193.23.11.3:3333
+iptables -t nat -I POSTROUTING -d 193.23.11.3 -p tcp --dport 3333 -j SNAT --to-source 192.168.17.131
+iptables -t filter -I FORWARD -d 193.23.11.3 -p tcp --dport 3333
+iptables -t filter -I FORWARD -s 193.23.11.3 -p tcp --dport 3333
+iptables -t nat -I PREROUTING -p udp --dport 9988 -j DNAT --to-destination 193.23.11.3:3333
+iptables -t nat -I POSTROUTING -d 193.23.11.3 -p udp --dport 3333 -j SNAT --to-source 192.168.17.131
+iptables -t filter -I FORWARD -d 193.23.11.3 -p udp --dport 3333
+iptables -t filter -I FORWARD -s 193.23.11.3 -p udp --dport 3333
+```
+It's just a convenient tool.
 
 # Quick Start
 
@@ -85,7 +102,7 @@ Delete completed
 
 * Start the web API:
 ```bash
- sudo traffic_forward web
+ sudo traffic_forward web 8080
 ```
 
 ---
@@ -95,7 +112,7 @@ Delete completed
 ## Start web API
 
 ```bash
-traffic_forward web
+traffic_forward web 8080
 ```
 
 Add

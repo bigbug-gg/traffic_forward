@@ -37,7 +37,11 @@ enum Commands {
     List,
 
     /// Web API switch, start or off
-    Web
+    Web {
+        /// Port default 8080
+        #[arg(value_name = "PORT")]
+        port: Option<u16>
+    }
 }
 
  fn main()  {
@@ -95,8 +99,16 @@ enum Commands {
             return;
         },
         
-        Commands::Web => {
-            traffic_forward::api_server();
+        Commands::Web{
+            port
+        } => {
+            
+            let mut def_port: u16 = 8080;
+            if port.is_some() {
+                def_port = port.unwrap();
+            }
+
+            traffic_forward::api_server(def_port);
         },
         
         Commands::List => {
