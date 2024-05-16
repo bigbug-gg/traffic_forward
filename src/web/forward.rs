@@ -2,10 +2,6 @@ use crate::service;
 use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
 use serde::{Deserialize, Serialize};
 
-///
-/// Iptables Api enter
-///
-
 #[post("/add")]
 async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
     let data = service::add(
@@ -20,6 +16,7 @@ async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
         Ok(JsonData::response(None, Some(())))
     }
 }
+
 
 #[post("/del")]
 async fn del_iptables(info: web::Json<IptableIp>) -> Result<impl Responder> {
@@ -38,6 +35,12 @@ async fn list_iptables() -> Result<impl Responder> {
     Ok(JsonData::response(None, data))
 }
 
+/**
+ AddIptable
+
+ API parameters 
+
+ */
 #[derive(Deserialize)]
 struct AddIptable {
     target_ip: String,
@@ -88,6 +91,13 @@ impl<T: Serialize> JsonData<T> {
     }
 }
 
+/**
+Enter
+
+It creates Create TCP/UDP rules for three chains
+
+PREROUTING、FORWARD、POSTROUTING (TCP|UDP)
+*/
 pub fn enter() -> Scope {
     web::scope("/iptables")
         .service(add_iptables)

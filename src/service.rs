@@ -1,12 +1,14 @@
+
+//! 
+//! The service layer provides a unified invocation method
+//! 
 use crate::{host::{self, ip::{self, Info}}, iptables::{self, tools::{self, Traffic}}};
 
 pub fn list() -> Option<ip::Host> {
     host::ip::host_list()
 }
 
-///
-/// Add new ip forward
-/// 
+///  Add new ip forward
 pub fn add(target_ip: &str, target_port: &str, local_port: &str) -> Result<(), String>{
     let info = Info{
         ip: target_ip.to_string(),
@@ -30,9 +32,7 @@ pub fn add(target_ip: &str, target_port: &str, local_port: &str) -> Result<(), S
     return Ok(());
 }
 
-///
 /// Delete Forwar
-/// 
 pub fn del(ip: &str) -> Result<(), String> {
     
     if ip::exists(ip)? {
@@ -42,6 +42,7 @@ pub fn del(ip: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Query traffic
 pub fn traffic(ip: &str) -> Result<Traffic, String>{
     if !ip::exists(ip)? {
         return Err("No matching IP found".to_string());

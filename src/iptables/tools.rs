@@ -14,9 +14,7 @@ mod tests {
     }
 }
 
-///
 /// Add new iptables forward
-///
 pub fn add(
     local_port: &str,
     target_ip: &str,
@@ -74,9 +72,7 @@ pub fn add(
 
 
 
-///
-/// Traffic (Unit: byte)
-/// 
+/// Traffic (Unit: byte) 
 #[derive(Debug)]
 pub struct  Traffic{
     pub up: u64,
@@ -89,9 +85,7 @@ impl Display for Traffic {
     }
 }
 
-///
-/// Check 
-///
+/// Query forwarded upstream and downstream traffic
 pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
     let res = run_command("iptables -t filter -vxnL FORWARD --line");
     let mut up = 0;
@@ -115,11 +109,10 @@ pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
     })
 }
 
-///
+
 /// Delete
 ///
 /// get target ip and delete all of forward config with they.
-///
 pub fn delete(target_ip: &str) -> Result<(), String> {
     let fn_list = vec![
         |a: &str| delete_forward(a),
@@ -262,9 +255,7 @@ fn generate_prerouting_command(
     command_str
 }
 
-///
 /// Generate Postrouting command
-///
 fn generate_postrouting_command(
     target_ip: &str,
     target_port: &str,
@@ -294,19 +285,16 @@ fn generate_postrouting_command(
     Ok(command_str)
 }
 
-///
+
 /// ForwardCommand Type
 /// It is necessary to use for traffic statistics
-///
 #[derive(Debug)]
 struct ForwardCommand {
     down: String, // Download traffic
     up: String,   // Upload traffic
 }
 
-///
 /// Generate Forward command
-///
 fn generate_forward_command(
     target_ip: &str,
     target_port: &str,
@@ -344,9 +332,7 @@ fn generate_forward_command(
     })
 }
 
-///
 /// Command fn
-/// 
 fn run_command(command_str: &str) -> Result<Vec<String>, String> {
 
     if !is_root() {
@@ -397,9 +383,7 @@ pub fn is_root() -> bool {
     uid == 0
 }
 
-///
 /// Get Local IP
-///
 fn local_ip() -> Option<String> {
     let output = Command::new("hostname")
         .arg("-I")

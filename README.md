@@ -1,19 +1,20 @@
 # Traffic Forward
 
-> Traffic Forwarding
+> This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
 
-*Read this in other languages:  [中文](README.cn.md).*
+## What is this
 
-# What is this
+It creates Create TCP/UDP rules for three chains:
 
-This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
-
-It creates three iptables rules with one command:
 ```bash
+# Chians: PREROUTING、FORWARD、POSTROUTING
 sudo traffic_forward add 193.23.11.3:3333 9988
 ```
+
 Equivalent to:
+
 ```bash
+# 192.168.17.131 is the server host's IP address, automatically fetched.
 iptables -t nat -I PREROUTING -p tcp --dport 9988 -j DNAT --to-destination 193.23.11.3:3333
 iptables -t nat -I POSTROUTING -d 193.23.11.3 -p tcp --dport 3333 -j SNAT --to-source 192.168.17.131
 iptables -t filter -I FORWARD -d 193.23.11.3 -p tcp --dport 3333
@@ -23,11 +24,9 @@ iptables -t nat -I POSTROUTING -d 193.23.11.3 -p udp --dport 3333 -j SNAT --to-s
 iptables -t filter -I FORWARD -d 193.23.11.3 -p udp --dport 3333
 iptables -t filter -I FORWARD -s 193.23.11.3 -p udp --dport 3333
 ```
-It's just a convenient tool.
 
-# Quick Start
+## Prerequisite
 
-## Prerequisite 
 * Must be a Linux operating environment.
 * The server has enabled traffic forwarding.【95% of people did not take this step】
 * The server already has a `Rust` environment.
@@ -36,14 +35,14 @@ It's just a convenient tool.
 
 This tool only replaces writing `iptables` rules and solves multiple configurations with one command. As `iptables` is used, `root` account operations are required.
 
-## Installation:
-
+## Installation
 
 ```bash
 cargo install traffic_forward
 ```
 
 Upon successful installation, you will see the following path:
+
 ```bash
 ...
  Compiling clap v4.5.4
@@ -56,17 +55,19 @@ Upon successful installation, you will see the following path:
 
 【Non-root Account】 Add a soft link to `/usr/bin`：
 
-```
+``` bash
 sudo ln -s /home/youre_account/.cargo/bin/traffic_forward /usr/bin/traffic_forward
 ```
 
 View version:
+
 ``` bash
 traffic_forward --version
 traffic_forward 0.1.0
 ```
 
 Or:
+
 ``` bash
 sudo traffic_forward --version
 traffic_forward 0.1.0
@@ -74,7 +75,7 @@ traffic_forward 0.1.0
 
 ---
 
-## Usage：
+## Usage
 
 * Add forwarding：
 
@@ -84,99 +85,109 @@ sudo traffic_forward add 192.102.11.44:8000 5555
 ```
 
 * List of existing rules:
-```
+
+``` bash
 sudo traffic_forward list
 0.0.0.0:5555 -> 192.102.11.44:8000
 ```
 
 * Query traffic consumption for a specific IP:
-```
+
+``` bash
 sudo traffic_forward query 192.102.11.44
 ```
 
 * Delete forwarding rule for a specific IP:
-```bash
+
+``` bash
 sudo traffic_forward delete 192.102.11.44
 Delete completed
 ```
 
-* Start the web API:
-```bash
+* Enable the wep interface:
+
+``` bash
  sudo traffic_forward web 8080
 ```
 
 ---
 
-
-
-## Start web API
+## Enable the wep interface
 
 ```bash
 traffic_forward web 8080
 ```
 
 Add
+
 * uri: iptables/add
 * method: post
 * request
-```
+
+``` bash
 {
-	"target_ip": "192.168.50.50",
-	"target_port": "4488",
-	"local_port": "4433",
+ "target_ip": "192.168.50.50",
+ "target_port": "4488",
+ "local_port": "4433",
 }
 ```
 
 * response
-```
+
+``` bash
 {
-	"code": 1,
-	"msg": "Success",
-	"data": null
+ "code": 1,
+ "msg": "Success",
+ "data": null
 }
 ```
 
 Delete
+
 * uri: iptables/del
 * method: post
 * request
-```
+
+``` json
 {
-	"target_ip": "192.168.50.50"
+ "target_ip": "192.168.50.50"
 }
 ```
 
 * response
-```
+
+``` json
 {
-	"code": 1,
-	"msg": "Success",
-	"data": null
+ "code": 1,
+ "msg": "Success",
+ "data": null
 }
 ```
 
 List
+
 * uri: iptables/list
 * method: get
-* request: empty (change next version will) 
+* request: empty (change next version will)
 * response
-```
+
+``` json
 {
-	"code": 1,
-	"msg": "Success",
-	"data": {
-		"list": [
-			{
-				"ip": "192.168.50.50",
-				"target_port": "4488",
-				"local_port": "4433"
-			}
-		]
-	}
+ "code": 1,
+ "msg": "Success",
+ "data": {
+  "list": [
+   {
+    "ip": "192.168.50.50",
+    "target_port": "4488",
+    "local_port": "4433"
+   }
+  ]
+ }
 }
 ```
 
-# Use demo
+## Usage examples
 
 ``` bash
 $ sudo traffic_forward -V
@@ -203,3 +214,7 @@ $ sudo traffic_forward list
 0.0.0.0:5000 -> 192.145.2.22:323
 
 ```
+
+## License
+
+MIT OR Apache-2.0

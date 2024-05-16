@@ -3,7 +3,7 @@ use std::fs::File;
 use std::{env, fmt::Display, io::Write};
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
-
+/// List of IP addresses for all hosts
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Host {
     pub list: Vec<Info>,
@@ -24,16 +24,18 @@ impl Display for Host {
     }
 }
 
+/// Info for IP
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Info {
+    /// forward ip
     pub ip: String,
+    /// forward port
     pub target_port: String,
+    /// Traffic forwarding host port
     pub local_port: String,
 }
 
-///
 /// Exists check ip if real in file
-/// 
 pub fn exists(ip: &str) -> Result<bool, String> {
     let content = host_list();
     if content.is_none() {
@@ -50,9 +52,7 @@ pub fn exists(ip: &str) -> Result<bool, String> {
     return Ok(false);
 }
 
-///
 /// Save Target Host
-///
 pub fn save_host(info: Info) -> Result<(), String> {
     let file_content = host_list();
     let mut host: Host;
@@ -91,9 +91,7 @@ pub fn save_host(info: Info) -> Result<(), String> {
     return Ok(());
 }
 
-///
 /// Delete Host
-///
 pub fn delete_host(ip: &str) {
     let file_content = host_list();
 
@@ -117,9 +115,7 @@ pub fn delete_host(ip: &str) {
     let _ = wirte_file.write(&need_save);
 }
 
-///
-/// Get All Target Host Info
-///
+///Get All Target Host Info
 pub fn host_list() -> Option<Host> {
 
     let mut data = Host::default();
@@ -136,9 +132,7 @@ pub fn host_list() -> Option<Host> {
     Some(data)
 }
 
-///
 /// Host Path
-///
 fn host_path() -> String {
     match env::home_dir() {
         Some(path) => {
