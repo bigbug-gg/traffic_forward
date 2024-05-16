@@ -107,7 +107,8 @@ Delete completed
 * Enable the wep interface:
 
 ``` bash
- sudo traffic_forward web 8080
+# traffic_forward web <token> [port]
+ sudo traffic_forward 1234 8080
 ```
 
 ---
@@ -115,7 +116,8 @@ Delete completed
 ## Enable the wep interface
 
 ```bash
-traffic_forward web 8080
+# traffic_forward web <token> [port]
+traffic_forward web 1234 8080
 ```
 
 Add
@@ -213,6 +215,12 @@ Query error: No matching IP found
 $ sudo traffic_forward list
 0.0.0.0:5000 -> 192.145.2.22:323
 
+# When use API 
+sudo ./traffic_forward web 1234 8080
+
+# Request test
+curl -H"token: 1234" localhost:8080/iptables/list
+{"code":1,"msg":"Success","data":{"list":[{"ip":"xxx.xx.xx.xx","target_port":"12581","local_port":"49204"}]}}
 ```
 
 ## License

@@ -15,21 +15,21 @@ async fn index() -> impl Responder {
 
 /// Run
 #[actix_web::main]
-pub async fn run<'a>(port: u16, _token: &'a str) -> Result<(), std::io::Error> {
+pub async fn run<'a>(port: u16, token: String) -> Result<(), std::io::Error> {
     std::env::set_var("RUST_LOG", "info");
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
-
+    let long_time_str = gen_static_str(token);
     info!("Access address: http://localhost:{}", port);
-    info!("Request must carray heard key token, The value: {}", _token);
-
+    info!("When making API requests, include a header with the token as a parameter. {}", long_time_str);
+   
     HttpServer::new(move || {
         let logger = Logger::default();
         App::new()
             .wrap(logger)
             .service(
-                web::scope("/")
-                // .guard(guard::Header("token",))
+                web::scope("")
+                .guard(guard::Header("token", long_time_str))
                 .service(
                     forward::enter()
                 )
@@ -40,4 +40,8 @@ pub async fn run<'a>(port: u16, _token: &'a str) -> Result<(), std::io::Error> {
     .bind(("0.0.0.0", port))?
     .run()
     .await
+}
+
+fn gen_static_str(st: String) ->&'static str{
+    Box::leak(st.into_boxed_str())
 }
