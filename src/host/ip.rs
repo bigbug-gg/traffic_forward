@@ -1,8 +1,15 @@
+/*!
+ This tool features a straightforward storage solution that retains the IP addresses of hosts involved in forwarding, 
+ offering necessary data for traffic investigations and preventing the recurrence of duplicate entries.
+ */
+
 #[allow(dead_code)]
 use std::fs::File;
 use std::{env, fmt::Display, io::Write};
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
+
+
 /// List of IP addresses for all hosts
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Host {

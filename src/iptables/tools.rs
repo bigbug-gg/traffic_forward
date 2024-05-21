@@ -1,3 +1,5 @@
+//! Sealing of conversion methods
+
 use nix::libc::getuid;
 
 use std::{fmt::Display, io::BufRead, process::Command, thread};
@@ -332,7 +334,7 @@ fn generate_forward_command(
     })
 }
 
-/// Command fn
+/// Command execution method encapsulation
 fn run_command(command_str: &str) -> Result<Vec<String>, String> {
 
     if !is_root() {
@@ -378,6 +380,7 @@ fn run_command(command_str: &str) -> Result<Vec<String>, String> {
     Ok(res)
 }
 
+/// Is it currently a root account
 pub fn is_root() -> bool {
     let uid = unsafe { getuid() };
     uid == 0

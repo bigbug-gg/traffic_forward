@@ -1,2 +1,2 @@
-//! Tools for implementing iptables
+//! Generate forwarding and required iptables commands
 pub mod tools;

@@ -1,5 +1,3 @@
-//! Web
-//! 
 //! Provide web interfaces for external calls
 
 use actix_web::{guard, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
@@ -13,7 +11,18 @@ async fn index() -> impl Responder {
     HttpResponse::Ok().body("RDP-PRO")
 }
 
-/// Run
+///
+/// Web interface main method
+/// 
+/// It will create listening for the specified port and set the verification rules for tokens in request hearts
+/// 
+/// # Examples
+/// ```
+/// let port: u8 = 2233;
+/// let token: String = String::from("12341234");
+/// traffic_forward::web::run(def_port, token);
+/// ```
+/// 
 #[actix_web::main]
 pub async fn run<'a>(port: u16, token: String) -> Result<(), std::io::Error> {
     std::env::set_var("RUST_LOG", "info");
