@@ -2,7 +2,7 @@
 
 use nix::libc::getuid;
 
-use std::{fmt::Display, io::BufRead, process::Command, thread};
+use std::{fmt::Display, io::BufRead, process::Command};
 
 #[cfg(test)]
 mod tests {
@@ -17,6 +17,8 @@ mod tests {
 }
 
 /// Add new iptables forward
+/// 
+/// Create three iptables commands for chains: prerouting, posting, and forward
 pub fn add(
     local_port: &str,
     target_ip: &str,
@@ -25,27 +27,18 @@ pub fn add(
     protocol: Option<&str>,
     self_ip: Option<&str>,
 ) -> Result<(), String> {
-    // if not protocol set default tcp
-    let _protocl = if protocol.is_none() {
-        "tcp"
-    } else {
-        protocol.unwrap()
-    };
+    // protocol set default tcp
+    let protocl = protocol.unwrap_or("tcp");
 
-    let prerouting =
-        generate_prerouting_command(local_port, target_ip, target_port, _protocl, comment);
+    let prerouting = generate_prerouting_command(local_port, target_ip, target_port, protocl, comment);
 
-    let postrouting =
-        generate_postrouting_command(target_ip, target_port, _protocl, comment, self_ip);
-    if postrouting.is_err() {
-        return Err(postrouting.err().unwrap());
-    }
-    let postrouting = postrouting.unwrap();
-
+    let postrouting = generate_postrouting_command(target_ip, target_port, protocl, comment, self_ip);
+  
     let forward = generate_forward_command(target_ip, target_port, comment, protocol);
     if forward.is_err() {
-        return Err(forward.err().unwrap());
+        return Err(forward.err().expect("Generate forward command faild"));
     }
+
     let forward = forward.unwrap();
     let forward_up = forward.up;
     let forward_down = forward.down;
@@ -56,37 +49,34 @@ pub fn add(
         forward_up.as_str(),
         forward_down.as_str(),
     ];
-    let mut hands = Vec::new();
-    for command in command_vec {
-        let a = command.to_owned();
-        let one = thread::spawn(move || {
-            let _ = run_command(&a);
-        });
-        hands.push(one);
-    }
 
-    for h in hands {
-        h.join().unwrap();
+    for command in command_vec {
+        if let Err(err) = run_command(command) {
+            return Err(err);
+        }
     }
 
     Ok(())
 }
 
-
-
-/// Traffic (Unit: byte) 
+/// Traffic (Unit: byte)
 #[derive(Debug)]
-pub struct  Traffic{
+pub struct Traffic {
+    /// Uplink traffic(Unit:byte)
     pub up: u64,
-    pub down: u64
+
+    /// Downward traffic(Unit:byte)
+    pub down: u64,
 }
 
 impl Display for Traffic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Up: {} KB \nDown: {} KB", self.up, self.down)
+        write!(f, "Up: {} byte \nDown: {} byte", self.up, self.down)
     }
 }
 
+/// Traffic
+/// 
 /// Query forwarded upstream and downstream traffic
 pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
     let res = run_command("iptables -t filter -vxnL FORWARD --line");
@@ -105,48 +95,56 @@ pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
             down += m.get(1).unwrap().parse::<u64>().unwrap();
         }
     }
-    Ok(Traffic{
-        up,
-        down
-    })
+    Ok(Traffic { up, down })
 }
-
 
 /// Delete
 ///
-/// get target ip and delete all of forward config with they.
+/// When deleting rules, it is necessary to delete all configurations on the pre routing, posting, and forward chains
 pub fn delete(target_ip: &str) -> Result<(), String> {
-    let fn_list = vec![
-        |a: &str| delete_forward(a),
-        |a: &str| delete_postrouting(a),
-        |a: &str| delete_prerouting(a),
+    // inner fn
+    let delete_chain_list = vec![
+        ChainType::FORWARD,
+        ChainType::POSTROUTING,
+        ChainType::PREROUTING,
     ];
 
-    let mut handles = Vec::new();
-    for su_fn in fn_list {
-        let a = target_ip.to_owned();
-        let h = thread::spawn(move || su_fn(&a));
-        handles.push(h);
-    }
-
-    let mut error: String = String::new();
-    for h in handles {
-        if let Err(e) = h.join().unwrap() {
-            error.push_str(&e);
-        }
-    }
-
-    if error.len() > 0 {
-        return Err(error);
+    for chain_type in delete_chain_list {
+        ip_delete(target_ip, chain_type)?;
     }
 
     return Ok(());
 }
 
-fn delete_prerouting(target_ip: &str) -> Result<(), String> {
+/// iptables Chain Type
+#[derive(PartialEq)]
+enum ChainType {
+    FORWARD,
+    POSTROUTING,
+    PREROUTING,
+}
+
+impl Display for ChainType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            ChainType::FORWARD => String::from("FORWARD"),
+            ChainType::POSTROUTING => String::from("POSTROUTING"),
+            ChainType::PREROUTING => String::from("PREROUTING"),
+        };
+        write!(f, "{name}")
+    }
+}
+
+/// Delete IP
+fn ip_delete(target_ip: &str, chain_type: ChainType) -> Result<(), String>
+{
+    // There are multiple rules in the configuration, and after deleting one rule, 
+    // the index of the configuration will also change. Only a loop can delete all configuration items cleanly
     loop {
-        let res = run_command("iptables -t nat -vnL PREROUTING --line");
+        let inner_table = if chain_type == ChainType::FORWARD {"filter"} else {"nat"};
+        let res = run_command(&format!("iptables -t {} -vnL {} --line", inner_table, chain_type));
         let mut line_str: Option<String> = None;
+        // Fetch index of config in iptables
         for i in res.unwrap() {
             if i.contains(target_ip) {
                 line_str = Some(i);
@@ -158,80 +156,17 @@ fn delete_prerouting(target_ip: &str) -> Result<(), String> {
             break;
         }
 
-        let line_row = line_str.unwrap();
+        let line_row = line_str.expect("Failed to obtain iptables configuration");
         let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
 
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();
-        let _ = run_command(
-            format!("iptables -t nat -D PREROUTING {}", rule_index).as_str()
-        )
-        .unwrap();
+        run_command(&format!("iptables -t {} -D {} {}", inner_table, chain_type, rule_index))?;
     }
-    Ok(())
+    Ok(())   
 }
 
-fn delete_postrouting(target_ip: &str) -> Result<(), String> {
-    loop {
-        let res = run_command(
-            "iptables -t nat -vnL POSTROUTING --line"
-        );
-        let mut line_str: Option<String> = None;
-        for i in res.unwrap() {
-            if i.contains(target_ip) {
-                line_str = Some(i);
-                break;
-            }
-        }
-
-        if line_str.is_none() {
-            break;
-        }
-
-        let line_row = line_str.unwrap();
-        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
-
-        // Get ip index, delete we need this
-        let rule_index = line_vec.first().unwrap().trim();
-        let _ = run_command(
-            format!("iptables -t nat -D POSTROUTING {}", rule_index).as_str()
-        )
-        .unwrap();
-    }
-    Ok(())
-}
-
-fn delete_forward(target_ip: &str) -> Result<(), String> {
-    loop {
-        let res = run_command("iptables -t filter -vnL FORWARD --line");
-        let mut line_str: Option<String> = None;
-        for i in res.unwrap() {
-            if i.contains(target_ip) {
-                line_str = Some(i);
-                break;
-            }
-        }
-
-        if line_str.is_none() {
-            break;
-        }
-
-        let line_row = line_str.unwrap();
-        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
-
-        // Get ip index, delete we need this
-        let rule_index = line_vec.first().unwrap().trim();
-        let _ = run_command(
-            format!("iptables -t filter -D FORWARD {}", rule_index).as_str()
-        )
-        .unwrap();
-    }
-    Ok(())
-}
-
-/**
- * Generate Prerouting command with
- */
+/// Generate Prerouting command with
 fn generate_prerouting_command(
     local_port: &str,
     target_ip: &str,
@@ -264,29 +199,25 @@ fn generate_postrouting_command(
     protocol: &str,
     comment: Option<&str>,
     self_host_ip: Option<&str>,
-) -> Result<String, String> {
+) -> String {
     let mut command_str = format!("iptables -t nat -I POSTROUTING -d {}", target_ip);
 
     // iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port
     command_str += format!(" -p {} --dport {}", protocol, target_port).as_str();
 
-    let self_ip = if self_host_ip.is_none() {
-        local_ip().unwrap()
-    } else {
-        self_host_ip.unwrap().to_string()
-    };
-
+    // Local host ip address
+    let owner_host_ip = self_host_ip.map(|ip| ip.to_string()).or_else(|| local_ip()).expect("Failed to get IP address");
+   
     // like: iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip
-    command_str += format!(" -j SNAT --to-source {}", self_ip).as_str();
+    command_str += format!(" -j SNAT --to-source {}", owner_host_ip).as_str();
 
     if comment.is_some() {
         // like: iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip -m comment --comment "Postrouting"
         command_str += format!(" -m comment --comment \"{}\"", comment.unwrap()).as_str();
     }
 
-    Ok(command_str)
+    command_str
 }
-
 
 /// ForwardCommand Type
 /// It is necessary to use for traffic statistics
@@ -334,49 +265,33 @@ fn generate_forward_command(
     })
 }
 
-/// Command execution method encapsulation
+/// The main entry point for calling system commands
 fn run_command(command_str: &str) -> Result<Vec<String>, String> {
-
-    if !is_root() {
-        panic!("Please use the root account to run");
-    }
-
     let mut command_vec: Vec<&str> = command_str.split(' ').collect();
+
     if command_vec.len() <= 0 {
         return Err("Please enter a valid command".to_string());
     }
 
-    let mut first_command = String::new();
+    let program = command_vec.first().unwrap().to_string();
+    command_vec.remove(0);
 
-    loop {
-        if !first_command.is_empty() && !first_command.eq("sudo") {
-            break;
+    let data = Command::new(program).args(command_vec)
+    .output().expect(&format!("Command call failed: {}", command_str.to_string()));
+
+    if !data.status.success() {
+        let mut error_msg = match String::from_utf8(data.stderr) {
+            Ok(msg) => msg,
+            Err(e) => e.to_string(),
+        };
+
+        if !is_root() {
+            error_msg.push_str("Permission denied (you must be root)")
         }
-        first_command = command_vec.first().unwrap().to_string();
-        command_vec.remove(0);
+        return Err(error_msg);
     }
 
-    if first_command.is_empty() {
-        return Err("No valid instructions detected".to_string())
-    }
-
-    let mut res = Vec::new();
-
-    // build and run command.
-    let mut comand = Command::new(first_command);
-    for arg in command_vec {
-        comand.arg(arg);
-    }
-
-    let output = comand.output().expect("Can not get data.");
-    for line in output.stdout.lines() {
-        if let Ok(i) = line {
-            res.push(i);
-        } else {
-            return Err(line.err().unwrap().to_string());
-        }
-    }
-   
+    let res = data.stdout.lines().map(|s| s.unwrap()).collect();
     Ok(res)
 }
 

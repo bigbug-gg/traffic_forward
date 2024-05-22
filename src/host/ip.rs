@@ -5,7 +5,7 @@
 
 #[allow(dead_code)]
 use std::fs::File;
-use std::{env, fmt::Display, io::Write};
+use std::{fmt::Display, io::Write};
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
@@ -141,10 +141,10 @@ pub fn host_list() -> Option<Host> {
 
 /// Host Path
 fn host_path() -> String {
-    match env::home_dir() {
+    match simple_home_dir::home_dir() {
         Some(path) => {
             format!("{}/.traffic_forward.ron", path.display())
         },
-        None => panic!(""),
+        None => panic!("Impossible to get your home dir!"),
     }
 }

@@ -1,18 +1,5 @@
 use traffic_forward::service;
 
-
-#[test]
-fn test_home()
-{
-    use std::env;
-    match env::home_dir() {
-        Some(path) => {
-            println!("{}", path.display())
-        },
-        None => println!("Not found"),
-    }
-} 
-
 #[test]
 fn test_forward()
 {

@@ -1176,6 +1176,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "simple-home-dir"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c433538e900807402974e89beb88a98bda36e6f70f09a7225cdf11d013b8efe8"
+dependencies = [
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1359,7 +1368,7 @@ dependencies = [
 
 [[package]]
 name = "traffic_forward"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "actix-web",
  "clap",
@@ -1370,6 +1379,7 @@ dependencies = [
  "ron",
  "serde",
  "serde_json",
+ "simple-home-dir",
 ]
 
 [[package]]

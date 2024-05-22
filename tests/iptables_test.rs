@@ -17,7 +17,7 @@ fn one_forward() {
 #[test]
 fn del_forward() {
     let res = tools::delete("183.232.232.10");
-    assert!(res.is_ok(), "error: {}", res.err().unwrap());
+    assert!(res.is_ok(), "error owner: {}", res.err().unwrap());
 }
 
 #[test]

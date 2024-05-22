@@ -1,13 +1,15 @@
 # Traffic Forward
 
-> This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
+This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
+
+[![Static Badge](https://img.shields.io/badge/crates.io-traffic_forward_0.1.5-blue)](https://crates.io/crates/traffic_forward)
 
 ## What is this
 
-It creates Create TCP/UDP rules for three chains:
+It create TCP/UDP rules for three chains:
 
 ```bash
-# Chians: PREROUTING、FORWARD、POSTROUTING
+# Chians: PREROUTING、POSTROUTING、FORWARD
 sudo traffic_forward add 193.23.11.3:3333 9988
 ```
 
