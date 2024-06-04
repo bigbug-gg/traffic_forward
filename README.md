@@ -1,6 +1,6 @@
 # Traffic Forward
 
-[![Static Badge](https://img.shields.io/badge/crates.io-traffic_forward_0.1.5-blue)](https://crates.io/crates/traffic_forward)
+[![Static Badge](https://img.shields.io/badge/traffic_forward-v0.1.5-blue)](https://crates.io/crates/traffic_forward)
 
 This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
 
@@ -224,6 +224,7 @@ sudo ./traffic_forward web 1234 8080
 curl -H"token: 1234" localhost:8080/iptables/list
 {"code":1,"msg":"Success","data":{"list":[{"ip":"xxx.xx.xx.xx","target_port":"12581","local_port":"49204"}]}}
 ```
+
 
 ## License
 

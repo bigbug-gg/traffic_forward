@@ -141,10 +141,5 @@ pub fn host_list() -> Option<Host> {
 
 /// Host Path
 fn host_path() -> String {
-    match simple_home_dir::home_dir() {
-        Some(path) => {
-            format!("{}/.traffic_forward.ron", path.display())
-        },
-        None => panic!("Impossible to get your home dir!"),
-    }
+    "/etc/traffic_forward.ron".to_string()
 }
