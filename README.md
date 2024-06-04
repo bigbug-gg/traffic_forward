@@ -1,6 +1,6 @@
 # Traffic Forward
 
-[![Static Badge](https://img.shields.io/badge/traffic_forward-v0.1.5-blue)](https://crates.io/crates/traffic_forward)
+[![Static Badge](https://img.shields.io/badge/traffic_forward-v0.1.6-blue)](https://crates.io/crates/traffic_forward)
 
 This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool.
 
