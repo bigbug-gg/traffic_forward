@@ -8,7 +8,7 @@ pub(crate) mod forward;
 
 /// Index default enter
 async fn index() -> impl Responder {
-    HttpResponse::Ok().body("RDP-PRO")
+    HttpResponse::Ok().body("Hello, rdp-pro.com, Sponsored by RDP-PRO.")
 }
 
 ///
