@@ -157,7 +157,7 @@ fn ip_delete(target_ip: &str, chain_type: ChainType) -> Result<(), String>
         }
 
         let line_row = line_str.expect("Failed to obtain iptables configuration");
-        let line_vec: Vec<&str> = line_row.split("    ").filter(|_i| !_i.is_empty()).collect();
+        let line_vec: Vec<&str> = line_row.split(" ").filter(|_i| !_i.is_empty()).collect();
 
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();

@@ -1,6 +1,6 @@
 [package]
 name = "traffic_forward"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 authors = ["bigbug-gg <bigbug-gg@qq.com>"]
 description = "This is a tool that allows you to easily create traffic forwarding rules through this command, which is implemented through the iptables tool."

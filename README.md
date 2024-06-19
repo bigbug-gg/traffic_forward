@@ -30,8 +30,21 @@ iptables -t filter -I FORWARD -s 193.23.11.3 -p udp --dport 3333
 ## Prerequisite
 
 * Must be a Linux operating environment.
+* Iptables is already installed (most systems will default to installation).
 * The server has enabled traffic forwarding.【95% of people did not take this step】
 * The server already has a `Rust` environment.
+
+## How to enable server to enable traffic forwarding
+
+> Just for your reference, the ideas are the same
+
+``` shell
+# A value of 0 indicates that the forwarding function is not activated, while a value of 1 means it is activated.
+cat /proc/sys/net/ipv4/ip_forward
+
+# Temporarily enable forwarding function
+echo 1 > /proc/sys/net/ipv4/ip_forward
+```
 
 ## illustrate
 
@@ -58,6 +71,7 @@ Upon successful installation, you will see the following path:
 【Non-root Account】 Add a soft link to `/usr/bin`：
 
 ``` bash
+# This is only for your reference, please operate according to your actual path
 sudo ln -s /home/youre_account/.cargo/bin/traffic_forward /usr/bin/traffic_forward
 ```
 
@@ -65,14 +79,14 @@ View version:
 
 ``` bash
 traffic_forward --version
-traffic_forward 0.1.0
+traffic_forward X.X.X
 ```
 
 Or:
 
 ``` bash
 sudo traffic_forward --version
-traffic_forward 0.1.0
+traffic_forward X.X.X
 ```
 
 ---
@@ -224,7 +238,6 @@ sudo ./traffic_forward web 1234 8080
 curl -H"token: 1234" localhost:8080/iptables/list
 {"code":1,"msg":"Success","data":{"list":[{"ip":"xxx.xx.xx.xx","target_port":"12581","local_port":"49204"}]}}
 ```
-
 
 ## License
 
