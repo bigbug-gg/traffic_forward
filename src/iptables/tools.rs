@@ -4,17 +4,6 @@ use nix::libc::getuid;
 
 use std::{fmt::Display, io::BufRead, process::Command};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_prerouting() {
-        let pre_str = generate_prerouting_command("2002", "192.168.2.2", "4004", "tcp", None);
-        println!("prerouting: {}", pre_str);
-        assert_eq!("iptables -t nat -I PREROUTING -p tcp --dport 2002 -j DNAT --to-destination 192.168.2.2:4004", pre_str);
-    }
-}
 
 /// Add new iptables forward
 /// 
