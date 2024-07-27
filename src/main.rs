@@ -99,7 +99,7 @@ fn main() {
             let mut def_port: u16 = 8080;
             if port.is_some() {
                 def_port = port.unwrap();
-            }    
+            }
             let token_str = token.unwrap();
             let _ = traffic_forward::web::run(def_port, token_str);
         }

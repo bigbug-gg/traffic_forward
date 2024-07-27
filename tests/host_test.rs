@@ -13,7 +13,7 @@ fn ip_exists() {
 
 #[test]
 fn ip_save() {
-    let data = Info{
+    let data = Info {
         id: None,
         ip: "182.3.1.22".to_string(),
         target_port: "2233".to_string(),
@@ -27,7 +27,6 @@ fn ip_save() {
     }
 }
 
-
 #[test]
 fn ip_list() {
     let is_ok = ip_obj().list();
@@ -37,11 +36,11 @@ fn ip_list() {
             for info in d.list {
                 println!("{:?}", info)
             }
-        },
+        }
         None => println!("No Data"),
     }
 }
- 
+
 #[test]
 fn ip_delete() {
     let is_ok = ip_obj().delete("182.3.1.22");

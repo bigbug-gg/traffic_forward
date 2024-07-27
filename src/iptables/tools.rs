@@ -4,9 +4,8 @@ use nix::libc::getuid;
 
 use std::{fmt::Display, io::BufRead, process::Command};
 
-
 /// Add new iptables forward
-/// 
+///
 /// Create three iptables commands for chains: prerouting, posting, and forward
 pub fn add(
     local_port: &str,
@@ -19,10 +18,12 @@ pub fn add(
     // protocol set default tcp
     let protocl = protocol.unwrap_or("tcp");
 
-    let prerouting = generate_prerouting_command(local_port, target_ip, target_port, protocl, comment);
+    let prerouting =
+        generate_prerouting_command(local_port, target_ip, target_port, protocl, comment);
 
-    let postrouting = generate_postrouting_command(target_ip, target_port, protocl, comment, self_ip);
-  
+    let postrouting =
+        generate_postrouting_command(target_ip, target_port, protocl, comment, self_ip);
+
     let forward = generate_forward_command(target_ip, target_port, comment, protocol);
     if forward.is_err() {
         return Err(forward.err().expect("Generate forward command faild"));
@@ -65,7 +66,7 @@ impl Display for Traffic {
 }
 
 /// Traffic
-/// 
+///
 /// Query forwarded upstream and downstream traffic
 pub fn traffic(target_ip: &str) -> Result<Traffic, String> {
     let res = run_command("iptables -t filter -vxnL FORWARD --line");
@@ -125,13 +126,19 @@ impl Display for ChainType {
 }
 
 /// Delete IP
-fn ip_delete(target_ip: &str, chain_type: ChainType) -> Result<(), String>
-{
-    // There are multiple rules in the configuration, and after deleting one rule, 
+fn ip_delete(target_ip: &str, chain_type: ChainType) -> Result<(), String> {
+    // There are multiple rules in the configuration, and after deleting one rule,
     // the index of the configuration will also change. Only a loop can delete all configuration items cleanly
     loop {
-        let inner_table = if chain_type == ChainType::FORWARD {"filter"} else {"nat"};
-        let res = run_command(&format!("iptables -t {} -vnL {} --line", inner_table, chain_type));
+        let inner_table = if chain_type == ChainType::FORWARD {
+            "filter"
+        } else {
+            "nat"
+        };
+        let res = run_command(&format!(
+            "iptables -t {} -vnL {} --line",
+            inner_table, chain_type
+        ));
         let mut line_str: Option<String> = None;
         // Fetch index of config in iptables
         for i in res.unwrap() {
@@ -150,9 +157,12 @@ fn ip_delete(target_ip: &str, chain_type: ChainType) -> Result<(), String>
 
         // Get ip index, delete we need this
         let rule_index = line_vec.first().unwrap().trim();
-        run_command(&format!("iptables -t {} -D {} {}", inner_table, chain_type, rule_index))?;
+        run_command(&format!(
+            "iptables -t {} -D {} {}",
+            inner_table, chain_type, rule_index
+        ))?;
     }
-    Ok(())   
+    Ok(())
 }
 
 /// Generate Prerouting command with
@@ -195,8 +205,11 @@ fn generate_postrouting_command(
     command_str += format!(" -p {} --dport {}", protocol, target_port).as_str();
 
     // Local host ip address
-    let owner_host_ip = self_host_ip.map(|ip| ip.to_string()).or_else(|| local_ip()).expect("Failed to get IP address");
-   
+    let owner_host_ip = self_host_ip
+        .map(|ip| ip.to_string())
+        .or_else(|| local_ip())
+        .expect("Failed to get IP address");
+
     // like: iptables -t nat -A POSTROUTING -d target_ip -p udp --dport target_port -j SNAT --to-source self_ip
     command_str += format!(" -j SNAT --to-source {}", owner_host_ip).as_str();
 
@@ -265,8 +278,10 @@ fn run_command(command_str: &str) -> Result<Vec<String>, String> {
     let program = command_vec.first().unwrap().to_string();
     command_vec.remove(0);
 
-    let data = Command::new(program).args(command_vec)
-    .output().expect(&format!("Command call failed: {}", command_str.to_string()));
+    let data = Command::new(program)
+        .args(command_vec)
+        .output()
+        .expect(&format!("Command call failed: {}", command_str.to_string()));
 
     if !data.status.success() {
         let mut error_msg = match String::from_utf8(data.stderr) {

@@ -11,7 +11,6 @@ pub struct Host {
     pub list: Vec<Info>,
 }
 
-
 /// Info for IP
 #[derive(Debug, Default, Serialize)]
 pub struct Info {
@@ -27,7 +26,6 @@ pub struct Info {
     /// Traffic forwarding host port
     pub local_port: String,
 }
-
 
 // const TABLE_NAME: &str = "forward_table";
 
@@ -131,18 +129,20 @@ impl Ip {
 
         if let Err(e) = one {
             print!("error is: {}", e.to_string());
-            return false
+            return false;
         }
 
-       return true
+        return true;
     }
 
     /// Get All Target Host Info
     pub fn list(&self) -> Option<Host> {
-        let mut stmt = self.conn
-            .prepare("SELECT id, ip, target_port, local_port FROM forward_table").unwrap();
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, ip, target_port, local_port FROM forward_table")
+            .unwrap();
 
-            let mut host = Host::default();
+        let mut host = Host::default();
 
         let mut q = stmt.query([]).unwrap();
 
@@ -155,7 +155,7 @@ impl Ip {
             };
             host.list.push(info);
         }
-    
+
         Some(host)
     }
 }

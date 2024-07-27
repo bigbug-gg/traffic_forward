@@ -4,11 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[post("/add")]
 async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
-    let data = service::add(
-        &info.target_ip,
-        &info.target_port,
-        &info.local_port,
-    );
+    let data = service::add(&info.target_ip, &info.target_port, &info.local_port);
 
     if let Err(e) = data {
         Ok(JsonData::response(Some(&e), None))
@@ -16,7 +12,6 @@ async fn add_iptables(info: web::Json<AddIptable>) -> Result<impl Responder> {
         Ok(JsonData::response(None, Some(())))
     }
 }
-
 
 #[post("/del")]
 async fn del_iptables(info: web::Json<IptableIp>) -> Result<impl Responder> {
@@ -36,11 +31,11 @@ async fn list_iptables() -> Result<impl Responder> {
 }
 
 /**
- AddIptable
+AddIptable
 
- API parameters 
+API parameters
 
- */
+*/
 #[derive(Deserialize)]
 struct AddIptable {
     target_ip: String,
@@ -103,9 +98,9 @@ pub fn enter() -> Scope {
         .service(add_iptables)
         .service(del_iptables)
         .service(list_iptables)
-        .route("/",
-        web::get().to(|| async { HttpResponse::Ok().body("/") } ))
-        .route("",
-        web::get().to(|| async { HttpResponse::Ok().body("/") } ))
-
+        .route(
+            "/",
+            web::get().to(|| async { HttpResponse::Ok().body("/") }),
+        )
+        .route("", web::get().to(|| async { HttpResponse::Ok().body("/") }))
 }
