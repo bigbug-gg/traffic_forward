@@ -1,145 +1,186 @@
-/*!
- This tool features a straightforward storage solution that retains the IP addresses of hosts involved in forwarding, 
- offering necessary data for traffic investigations and preventing the recurrence of duplicate entries.
+/**!
+ * Ip store logic (CRUD)
  */
-
-#[allow(dead_code)]
-use std::fs::File;
-use std::{fmt::Display, io::Write};
-use ron::de::from_reader;
-use serde::{Deserialize, Serialize};
-
+use rusqlite::Connection;
+use serde::Serialize;
+use std::fmt::Display;
 
 /// List of IP addresses for all hosts
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Host {
     pub list: Vec<Info>,
 }
 
-impl Display for Host {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-
-        if self.list.len() <= 0 {
-            write!(f, "No Data")?;    
-        }
-
-        for i in &self.list {
-            write!(f, "0.0.0.0:{} -> {}:{}\n", i.local_port, i.ip, i.target_port)?;
-        }
-        
-        Ok(())
-    }
-}
 
 /// Info for IP
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Info {
+    /// id
+    pub id: Option<i32>,
+
     /// forward ip
     pub ip: String,
+
     /// forward port
     pub target_port: String,
+
     /// Traffic forwarding host port
     pub local_port: String,
 }
 
-/// Exists check ip if real in file
-pub fn exists(ip: &str) -> Result<bool, String> {
-    let content = host_list();
-    if content.is_none() {
-        return Err("Fetch Data error!".to_string());
-    }
 
-    let ip_host = content.unwrap();
-    
-    for info in ip_host.list {
-        if info.ip.eq(ip) {
-            return Ok(true);
+// const TABLE_NAME: &str = "forward_table";
+
+impl Display for Host {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.list.len() <= 0 {
+            write!(f, "No Data")?;
         }
+
+        for i in &self.list {
+            write!(
+                f,
+                "0.0.0.0:{} -> {}:{}\n",
+                i.local_port, i.ip, i.target_port
+            )?;
+        }
+
+        Ok(())
     }
-    return Ok(false);
 }
 
-/// Save Target Host
-pub fn save_host(info: Info) -> Result<(), String> {
-    let file_content = host_list();
-    let mut host: Host;
-    if !file_content.is_none() {
-        host = file_content.unwrap();
-        let host_exist = host.list.iter().position(|i| i.ip == info.ip);
+/// Ip struct
+/// Container a sqlite connection object.
+pub struct Ip {
+    conn: Connection,
+}
+pub fn new() -> Ip {
+    Ip { conn: get_conn() }
+}
 
-        if !host_exist.is_none() {
+impl Ip {
+    /// Check ip if real exists
+    pub fn exists(&self, ip: &str) -> Result<bool, String> {
+        let r: Result<usize, rusqlite::Error> = self.conn.query_row(
+            "SELECT COUNT(*) from forward_table WHERE ip = ?1 ",
+            [ip],
+            |row| row.get(0),
+        );
+
+        if let Err(e) = r {
+            return Err(e.to_string());
+        }
+
+        let r: usize = r.unwrap();
+        if r > 0 {
+            return Ok(true);
+        }
+
+        return Ok(false);
+    }
+
+    /// Check port
+    pub fn exists_local_port(&self, port: &str) -> Result<bool, String> {
+        let r: Result<usize, rusqlite::Error> = self.conn.query_row(
+            "SELECT COUNT(*) from forward_table WHERE local_port = ?1 ",
+            [port],
+            |row| row.get(0),
+        );
+
+        if let Err(e) = r {
+            return Err(e.to_string());
+        }
+
+        let r: usize = r.unwrap();
+        if r > 0 {
+            return Ok(true);
+        }
+
+        return Ok(false);
+    }
+
+    /// Save Target Host
+    pub fn save(&self, info: Info) -> Result<(), String> {
+        if self.exists(&info.ip)? {
             return Err(String::from("IP already exists"));
         }
 
-        let local_port_exist = host
-            .list
-            .iter()
-            .position(|i| i.local_port == info.local_port);
-
-        if !local_port_exist.is_none() {
+        if self.exists_local_port(&info.local_port)? {
             return Err(String::from(
                 "The transit host port has been used(local_port)",
             ));
         }
-        host.list.push(info);
-    } else {
-        host = Host { list: vec![info] }
+
+        self.conn
+            .execute(
+                "
+        INSERT INTO forward_table (ip, target_port, local_port) VALUES (?1, ?2, ?3)
+        ",
+                (&info.ip, &info.target_port, &info.local_port),
+            )
+            .unwrap();
+
+        return Ok(());
     }
 
-    let need_save = ron::to_string(&host).unwrap();
-    let need_save = need_save.as_bytes();
-    let mut wirte_file = File::create(host_path()).expect("Can not open file");
-    let result = wirte_file.write(&need_save);
+    /// Delete Host
+    pub fn delete(&self, ip: &str) -> bool {
+        let one = self
+            .conn
+            .execute("DELETE FROM forward_table WHERE ip = ?1;", [ip]);
 
-    if result.is_err() {
-        return Err(result.err().unwrap().to_string());
+        if let Err(e) = one {
+            print!("error is: {}", e.to_string());
+            return false
+        }
+
+       return true
     }
 
-    return Ok(());
-}
+    /// Get All Target Host Info
+    pub fn list(&self) -> Option<Host> {
+        let mut stmt = self.conn
+            .prepare("SELECT id, ip, target_port, local_port FROM forward_table").unwrap();
 
-/// Delete Host
-pub fn delete_host(ip: &str) {
-    let file_content = host_list();
+            let mut host = Host::default();
 
-    if file_content.is_none() {
-        return;
-    }
+        let mut q = stmt.query([]).unwrap();
 
-    let mut host = file_content.unwrap();
-    let host_exist = host.list.iter().position(|i| i.ip == ip);
-
-    if host_exist.is_none() {
-        return;
-    }
-
-    let index = host_exist.unwrap();
-    host.list.remove(index);
-
-    let need_save = ron::to_string(&host).unwrap();
-    let need_save = need_save.as_bytes();
-    let mut wirte_file = File::create(host_path()).expect("Can not open file");
-    let _ = wirte_file.write(&need_save);
-}
-
-///Get All Target Host Info
-pub fn host_list() -> Option<Host> {
-
-    let mut data = Host::default();
-    if let Ok(content) = File::open(host_path()) {
-         data = match from_reader(content) {
-            Ok(x) => x,
-            Err(e) => {
-                println!("Failed to load config: {}", e);
-                return None;
-            }
-        };
-    }
+        while let Some(row) = q.next().unwrap() {
+            let info = Info {
+                id: row.get(0).unwrap(),
+                ip: row.get(1).unwrap(),
+                target_port: row.get(2).unwrap(),
+                local_port: row.get(3).unwrap(),
+            };
+            host.list.push(info);
+        }
     
-    Some(data)
+        Some(host)
+    }
 }
 
 /// Host Path
-fn host_path() -> String {
-    "/etc/traffic_forward.ron".to_string()
+fn db_path() -> String {
+    "/etc/traffic_forward.db".to_string()
+}
+
+fn get_conn() -> Connection {
+    let conn = Connection::open(db_path()).unwrap();
+    init_table(&conn);
+    conn
+}
+
+fn init_table(conn: &Connection) {
+    let sql = r#"
+    CREATE TABLE IF NOT EXISTS forward_table (
+    id INTEGER PRIMARY KEY,
+    ip TEXT NOT NULL,
+    target_port TEXT NOT NULL,
+    local_port TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+"#;
+    conn.execute(sql, []).unwrap();
 }
