@@ -23,6 +23,7 @@ enum Commands {
         /// The port of local.
         port: String,
     },
+    Rebuild,
 
     /// Delete all target rule for forward.
     #[command(arg_required_else_help = true)]
@@ -71,6 +72,10 @@ fn main() {
 
             println!("Add completed");
             return;
+        }
+
+        Commands::Rebuild => {
+            service::rebuild();
         }
 
         Commands::Delete { ip } => {

@@ -8,6 +8,26 @@ pub fn list() -> Option<ip::Host> {
     host::ip::host_list()
 }
 
+/// Rebuild by the cache data, temp fn. maybe next version delete.
+#[deprecated="This is temp code, next version delete"]
+pub fn rebuild() -> Result((), String) {
+    let data_list = list();
+
+    if data_list.is_none() {
+        return Ok(())
+    }
+
+    let ip_list = data_list.unwrap().list;
+    for i in ip_list {
+        for agreement in ["tcp",  "udp"] {
+            if let Err(e) = iptables::tools::add(&i.local_port, &i.target_ip, &i.target_port, None, Some(agreement), None) {
+                println!("{}: {}", &i.target_ip, e)
+            }
+        }
+    }
+    Ok(())
+}
+
 ///  Add new ip forward
 pub fn add(target_ip: &str, target_port: &str, local_port: &str) -> Result<(), String>{
     let info = Info{
