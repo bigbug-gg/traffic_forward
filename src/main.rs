@@ -27,11 +27,15 @@ enum Commands {
 
     /// Delete all target rule for forward.
     #[command(arg_required_else_help = true)]
-    Delete { ip: String },
+    Delete {
+        ip: String,
+    },
 
     /// Query the traffic used. (Unit: byte)
     #[command(arg_required_else_help = true)]
-    Query { ip: String },
+    Query {
+        ip: String,
+    },
 
     /// List forward info
     List,
@@ -104,7 +108,7 @@ fn main() {
             let mut def_port: u16 = 8080;
             if port.is_some() {
                 def_port = port.unwrap();
-            }    
+            }
             let token_str = token.unwrap();
             let _ = traffic_forward::web::run(def_port, token_str);
         }

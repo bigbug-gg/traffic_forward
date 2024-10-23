@@ -1,14 +1,13 @@
 /*!
- This tool features a straightforward storage solution that retains the IP addresses of hosts involved in forwarding, 
- offering necessary data for traffic investigations and preventing the recurrence of duplicate entries.
- */
+This tool features a straightforward storage solution that retains the IP addresses of hosts involved in forwarding,
+offering necessary data for traffic investigations and preventing the recurrence of duplicate entries.
+*/
 
+use ron::de::from_reader;
+use serde::{Deserialize, Serialize};
 #[allow(dead_code)]
 use std::fs::File;
 use std::{fmt::Display, io::Write};
-use ron::de::from_reader;
-use serde::{Deserialize, Serialize};
-
 
 /// List of IP addresses for all hosts
 #[derive(Debug, Deserialize, Serialize, Default)]
@@ -18,15 +17,18 @@ pub struct Host {
 
 impl Display for Host {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-
         if self.list.len() <= 0 {
-            write!(f, "No Data")?;    
+            write!(f, "No Data")?;
         }
 
         for i in &self.list {
-            write!(f, "0.0.0.0:{} -> {}:{}\n", i.local_port, i.ip, i.target_port)?;
+            write!(
+                f,
+                "0.0.0.0:{} -> {}:{}\n",
+                i.local_port, i.ip, i.target_port
+            )?;
         }
-        
+
         Ok(())
     }
 }
@@ -50,7 +52,7 @@ pub fn exists(ip: &str) -> Result<bool, String> {
     }
 
     let ip_host = content.unwrap();
-    
+
     for info in ip_host.list {
         if info.ip.eq(ip) {
             return Ok(true);
@@ -124,10 +126,9 @@ pub fn delete_host(ip: &str) {
 
 ///Get All Target Host Info
 pub fn host_list() -> Option<Host> {
-
     let mut data = Host::default();
     if let Ok(content) = File::open(host_path()) {
-         data = match from_reader(content) {
+        data = match from_reader(content) {
             Ok(x) => x,
             Err(e) => {
                 println!("Failed to load config: {}", e);
@@ -135,7 +136,7 @@ pub fn host_list() -> Option<Host> {
             }
         };
     }
-    
+
     Some(data)
 }
 
