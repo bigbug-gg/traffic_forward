@@ -79,7 +79,7 @@ fn main() {
         }
 
         Commands::Rebuild => {
-            service::rebuild();
+            let _ = service::rebuild();
         }
 
         Commands::Delete { ip } => {
